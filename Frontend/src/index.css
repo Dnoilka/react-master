@@ -1,0 +1,12 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+@font-face {
+  font-family: 'Miss Stanfort';
+  src: local('Miss Stanfort'),
+    url('./components/page1/font/MissStanfort.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
