@@ -3,7 +3,7 @@ import { Layout, Row, Col, Card, Button, Typography, Switch } from 'antd';
 import { ThemeContext } from '../Sider/ThemeContext';
 
 const { Content } = Layout;
-const { Title } = Typography;
+const { Title, Paragraph } = Typography;
 
 const ContentComponent = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
@@ -179,6 +179,7 @@ const ContentComponent = () => {
                 marginBottom: '20px',
                 color: textColor,
                 transition: 'color 0.3s ease',
+                fontFamily: 'Playfair Display, serif',
               }}
             >
               Салон мужской одежды
@@ -192,6 +193,7 @@ const ContentComponent = () => {
                 fontWeight: 'bold',
                 padding: '12px 24px',
                 color: isDarkMode ? '#000' : '#fff',
+                fontFamily: 'Sherif, serif',
               }}
               onClick={() => alert('За покупками!')}
             >
@@ -214,6 +216,7 @@ const ContentComponent = () => {
               marginBottom: '40px',
               color: textColor,
               transition: 'color 0.3s ease',
+              fontFamily: 'Playfair Display, serif',
             }}
           >
             Рекомендуемые товары
@@ -239,16 +242,89 @@ const ContentComponent = () => {
                     />
                   }
                 >
-                  <Title level={4} style={{ margin: 0, color: textColor }}>
+                  <Title
+                    level={4}
+                    style={{
+                      margin: 0,
+                      color: textColor,
+                      fontFamily: 'Playfair Display, serif',
+                    }}
+                  >
                     {product.name}
                   </Title>
-                  <p className="price" style={{ color: priceColor }}>
+                  <p
+                    className="price"
+                    style={{ color: priceColor, fontFamily: 'Sherif, serif' }}
+                  >
                     {product.price}
                   </p>
                 </Card>
               </Col>
             ))}
           </Row>
+        </section>
+
+        <section
+          style={{
+            backgroundColor: '#e9dacd',
+            height: '400px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            textAlign: 'center',
+            fontFamily: 'Playfair Display, serif',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '600px',
+            }}
+          >
+            <Title
+              level={1}
+              style={{
+                fontSize: '48px',
+                fontWeight: 'bold',
+                marginBottom: '10px',
+                fontFamily: 'Playfair Display, serif',
+              }}
+            >
+              50% скидка
+            </Title>
+            <Paragraph
+              style={{
+                fontSize: '24px',
+                marginBottom: '5px',
+                fontFamily: 'Playfair Display, serif',
+              }}
+            >
+              На всю мужскую коллекцию.
+            </Paragraph>
+            <Paragraph
+              style={{
+                fontSize: '24px',
+                marginBottom: '20px',
+                fontFamily: 'Playfair Display, serif',
+              }}
+            >
+              Не пропустите
+            </Paragraph>
+            <Button
+              type="default"
+              size="large"
+              style={{
+                padding: '10px 30px',
+                fontSize: '18px',
+                backgroundColor: 'transparent',
+                border: '2px solid #000',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+              }}
+              onClick={() => alert('За покупками!')}
+            >
+              За покупками
+            </Button>
+          </div>
         </section>
 
         <section style={{ padding: '50px 0', paddingLeft: '10px' }}>
@@ -259,6 +335,7 @@ const ContentComponent = () => {
               marginBottom: '40px',
               color: textColor,
               transition: 'color 0.3s ease',
+              fontFamily: 'Playfair Display, serif',
             }}
           >
             С НАИБОЛЬШЕЙ ПОПУЛЯРНОСТЬЮ
@@ -284,7 +361,14 @@ const ContentComponent = () => {
                     />
                   }
                 >
-                  <Title level={4} style={{ margin: 0, color: textColor }}>
+                  <Title
+                    level={4}
+                    style={{
+                      margin: 0,
+                      color: textColor,
+                      fontFamily: 'Playfair Display, serif',
+                    }}
+                  >
                     {product.name}
                   </Title>
                   <p className="price" style={{ color: priceColor }}>
@@ -310,6 +394,7 @@ const ContentComponent = () => {
               marginBottom: '40px',
               color: textColor,
               transition: 'color 0.3s ease',
+              fontFamily: 'Playfair Display, serif',
             }}
           >
             ПОПУЛЯРНЫЕ ТОВАРЫ
@@ -335,7 +420,14 @@ const ContentComponent = () => {
                     />
                   }
                 >
-                  <Title level={4} style={{ margin: 0, color: textColor }}>
+                  <Title
+                    level={4}
+                    style={{
+                      margin: 0,
+                      color: textColor,
+                      fontFamily: 'Playfair Display, serif',
+                    }}
+                  >
                     {product.name}
                   </Title>
                   <p className="price" style={{ color: priceColor }}>
