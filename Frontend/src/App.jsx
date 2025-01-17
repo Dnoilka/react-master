@@ -5,15 +5,6 @@ import { ThemeProvider } from './components/page1/Sider/ThemeContext';
 import Content from './components/page1/Content/Content';
 import CustomFooter from './components/page1/Footer/Footer';
 
-const contentStyle = {
-  textAlign: 'center',
-  minHeight: 'calc(100vh - 60px)',
-};
-
-const footerStyle = {
-  textAlign: 'center',
-};
-
 export default function App() {
   return (
     <ThemeProvider>

@@ -251,7 +251,7 @@ const ContentComponent = () => {
           </Row>
         </section>
 
-        <section style={{ padding: '50px 0' }}>
+        <section style={{ padding: '50px 0', paddingLeft: '10px' }}>
           <Title
             level={2}
             style={{
@@ -269,7 +269,7 @@ const ContentComponent = () => {
                 <Card
                   hoverable
                   style={{
-                    width: '100%',
+                    width: '95%',
                     borderRadius: '10px',
                     overflow: 'hidden',
                     textAlign: 'center',
@@ -299,6 +299,7 @@ const ContentComponent = () => {
         <section
           style={{
             padding: '50px 0',
+            paddingLeft: '10px',
             backgroundColor: sectionBackgroundColor,
           }}
         >
@@ -319,7 +320,7 @@ const ContentComponent = () => {
                 <Card
                   hoverable
                   style={{
-                    width: '100%',
+                    width: '95%',
                     borderRadius: '10px',
                     overflow: 'hidden',
                     textAlign: 'center',
