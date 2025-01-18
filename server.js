@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
@@ -19,10 +20,10 @@ function generatePromoCode() {
 
 // Настройка Nodemailer
 const transporter = nodemailer.createTransport({
-  service: 'gmail', // или другой почтовый сервис
+  service: 'gmail',
   auth: {
-    user: 'dominikrassylka@gmail.com', // Твоя почта
-    pass: 'gmtr vlyt aqyf yhzp', // Пароль приложения или App Password
+    user: process.env.EMAIL_USER, // Твоя почта
+    pass: process.env.EMAIL_PASS, // Пароль приложения
   },
 });
 
@@ -34,12 +35,10 @@ app.post('/subscribe', async (req, res) => {
     return res.status(400).json({ message: 'E-mail обязателен!' });
   }
 
-  // Генерация промокода
   const promoCode = generatePromoCode();
 
-  // Настройка письма
   const mailOptions = {
-    from: '"Dominik Store" <your-email@gmail.com>',
+    from: `"Dominik Store" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Ваш промокод от Dominik Store!',
     html: `
@@ -50,7 +49,6 @@ app.post('/subscribe', async (req, res) => {
   };
 
   try {
-    // Отправка письма
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Промокод отправлен на вашу почту!' });
   } catch (error) {
