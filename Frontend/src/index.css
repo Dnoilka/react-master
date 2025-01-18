@@ -6,7 +6,7 @@
 @font-face {
   font-family: 'Miss Stanfort';
   src: local('Miss Stanfort'),
-    url('./components/page1/font/MissStanfort.ttf') format('truetype');
+    url('./components/HomePage/font/MissStanfort.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
 }
