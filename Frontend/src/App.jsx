@@ -1,21 +1,15 @@
-import { Layout } from 'antd';
-import Header from './components/page1/Header/Header';
-import Sider from './components/page1/Sider/Sider';
-import { ThemeProvider } from './components/page1/Sider/ThemeContext';
-import Content from './components/page1/Content/Content';
-import CustomFooter from './components/page1/Footer/Footer';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Page1 from './pages/Page1';
+import Page2 from './pages/Page2';
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <Layout>
-        <Header />
-        <Layout>
-          <Sider />
-          <Content />
-        </Layout>
-        <CustomFooter />
-      </Layout>
-    </ThemeProvider>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Page1 />}></Route>
+        <Route path="/page2" element={<Page2 />} />
+      </Routes>
+    </Router>
   );
 }

@@ -35,15 +35,13 @@ export default function CustomFooter() {
     padding: '30px 50px',
   };
 
-  // Базовый цвет текста для ссылки, который меняется в зависимости от темы
   const baseTextStyle = {
     color: isDarkTheme ? '#fff' : '#000',
-    transition: 'color 0.3s ease', // Плавный переход для изменения цвета
+    transition: 'color 0.3s ease',
   };
 
-  // Стиль для ссылки при наведении
   const hoverTextStyle = {
-    color: '#1890ff', // Синий цвет при наведении
+    color: '#1890ff',
   };
 
   return (
@@ -116,10 +114,10 @@ export default function CustomFooter() {
             <Link
               href="subscription.html"
               style={baseTextStyle}
-              onMouseEnter={(e) => (e.target.style.color = '#1890ff')} // Цвет при наведении
+              onMouseEnter={(e) => (e.target.style.color = '#1890ff')}
               onMouseLeave={(e) =>
                 (e.target.style.color = isDarkTheme ? '#fff' : '#000')
-              } // Возврат к базовому цвету
+              }
             >
               Условия акции
             </Link>
