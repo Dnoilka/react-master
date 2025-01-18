@@ -7,11 +7,11 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = 80;
 
-// Middleware для парсинга JSON
 app.use(bodyParser.json());
 
-// Статическая папка
 app.use(express.static('frontend/dist'));
+
+const promoCodesDB = {};
 
 // Генерация уникального промокода
 function generatePromoCode() {
@@ -22,12 +22,11 @@ function generatePromoCode() {
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: process.env.EMAIL_USER, // Твоя почта
-    pass: process.env.EMAIL_PASS, // Пароль приложения
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
-// Маршрут для обработки подписки
 app.post('/subscribe', async (req, res) => {
   const { email } = req.body;
 
@@ -35,8 +34,18 @@ app.post('/subscribe', async (req, res) => {
     return res.status(400).json({ message: 'E-mail обязателен!' });
   }
 
+  if (promoCodesDB[email]) {
+    return res.status(200).json({
+      message: 'Вы уже получили промокод!',
+      promoCode: promoCodesDB[email],
+    });
+  }
+
   const promoCode = generatePromoCode();
 
+  promoCodesDB[email] = promoCode;
+
+  // Настройка письма
   const mailOptions = {
     from: `"Dominik Store" <${process.env.EMAIL_USER}>`,
     to: email,
@@ -59,7 +68,6 @@ app.post('/subscribe', async (req, res) => {
   }
 });
 
-// Запуск сервера
 app.listen(port, () => {
   console.log('Server has been started on port ' + port);
 });
