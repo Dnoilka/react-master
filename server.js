@@ -3,6 +3,7 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
+const fs = require('fs');
 
 const app = express();
 const port = 80;
@@ -11,7 +12,24 @@ app.use(bodyParser.json());
 
 app.use(express.static('frontend/dist'));
 
-const promoCodesDB = {};
+// Файл для хранения промокодов
+const promoCodesFile = './promoCodes.json';
+
+// Чтение данных из файла
+function loadPromoCodes() {
+  if (fs.existsSync(promoCodesFile)) {
+    const data = fs.readFileSync(promoCodesFile);
+    return JSON.parse(data);
+  }
+  return {};
+}
+
+// Запись данных в файл
+function savePromoCodes(promoCodes) {
+  fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
+}
+
+const promoCodesDB = loadPromoCodes();
 
 // Генерация уникального промокода
 function generatePromoCode() {
@@ -44,6 +62,9 @@ app.post('/subscribe', async (req, res) => {
   const promoCode = generatePromoCode();
 
   promoCodesDB[email] = promoCode;
+
+  // Сохраняем данные о промокодах в файл
+  savePromoCodes(promoCodesDB);
 
   // Настройка письма
   const mailOptions = {
