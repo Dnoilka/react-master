@@ -1,14 +1,16 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Page1 from './pages/Page1';
-import Page2 from './pages/Page2';
+import Home from './pages/Home';
+import Shop from './pages/Shop';
+import Contact from './pages/Contact';
 
 export default function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Page1 />}></Route>
-        <Route path="/page2" element={<Page2 />} />
+        <Route path="/" element={<Home />}></Route>
+        <Route path="/Shop" element={<Shop />} />
+        <Route path="/contact" element={<Contact />} />
       </Routes>
     </Router>
   );

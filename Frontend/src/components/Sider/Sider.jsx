@@ -82,7 +82,7 @@ const SiderComponent = () => {
         {
           key: '2',
           label: (
-            <Link to="/page2" style={{ display: 'flex', alignItems: 'center' }}>
+            <Link to="/Shop" style={{ display: 'flex', alignItems: 'center' }}>
               <ShoppingOutlined />
               <span style={{ marginLeft: '10px' }}>Магазин</span>
             </Link>
@@ -90,8 +90,15 @@ const SiderComponent = () => {
         },
         {
           key: '3',
-          label: 'Контакты',
-          icon: <ContactsOutlined />,
+          label: (
+            <Link
+              to="/Contact"
+              style={{ display: 'flex', alignItems: 'center' }}
+            >
+              <ContactsOutlined />
+              <span style={{ marginLeft: '10px' }}>Контакты</span>
+            </Link>
+          ),
         },
       ],
     },

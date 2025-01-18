@@ -1,6 +1,6 @@
 import { React, useContext } from 'react';
 import { Layout, Row, Col, Card, Button, Typography, Switch } from 'antd';
-import { ThemeContext } from '../Sider/ThemeContext';
+import { ThemeContext } from '../../Sider/ThemeContext';
 
 const { Content } = Layout;
 const { Title, Paragraph } = Typography;

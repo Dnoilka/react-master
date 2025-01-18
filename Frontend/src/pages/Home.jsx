@@ -1,10 +1,10 @@
 import { Layout } from 'antd';
 import React from 'react';
-import Header from '../components/page1/Header/Header';
-import Sider from '../components/page1/Sider/Sider';
-import { ThemeProvider } from '../components/page1/Sider/ThemeContext';
-import Content from '../components/page1/Content/Content';
-import CustomFooter from '../components/page1/Footer/Footer';
+import Header from '../components/Header/Header';
+import Sider from '../components/Sider/Sider';
+import { ThemeProvider } from '../components/Sider/ThemeContext';
+import Content from '../components/HomePage/Content/Content';
+import CustomFooter from '../components/Footer/Footer';
 
 const HomePage = () => {
   return (
