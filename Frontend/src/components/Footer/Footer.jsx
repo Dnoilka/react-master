@@ -12,13 +12,15 @@ import {
   message,
 } from 'antd';
 import { ThemeContext } from '../Sider/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 
 const { Footer } = Layout;
 const { Title, Text, Link } = Typography;
 
 export default function CustomFooter() {
   const [subscribed, setSubscribed] = useState(false);
-  const { theme, toggleTheme } = useContext(ThemeContext);
+  const { theme } = useContext(ThemeContext);
+  const navigate = useNavigate();
 
   const onFinish = () => {
     setSubscribed(true);
@@ -38,10 +40,6 @@ export default function CustomFooter() {
   const baseTextStyle = {
     color: isDarkTheme ? '#fff' : '#000',
     transition: 'color 0.3s ease',
-  };
-
-  const hoverTextStyle = {
-    color: '#1890ff',
   };
 
   return (
@@ -112,8 +110,8 @@ export default function CustomFooter() {
             )}
 
             <Link
-              href="subscription.html"
               style={baseTextStyle}
+              onClick={() => navigate('/subscribe')}
               onMouseEnter={(e) => (e.target.style.color = '#1890ff')}
               onMouseLeave={(e) =>
                 (e.target.style.color = isDarkTheme ? '#fff' : '#000')
