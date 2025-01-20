@@ -19,13 +19,60 @@ const { Title, Text, Link } = Typography;
 
 export default function CustomFooter() {
   const [subscribed, setSubscribed] = useState(false);
+  const [email, setEmail] = useState('');
   const { theme } = useContext(ThemeContext);
   const navigate = useNavigate();
 
-  const onFinish = () => {
-    setSubscribed(true);
-    message.success('Спасибо! Мы уже отправили промокод вам на почту.');
+  const onFinish = async (values) => {
+    const email = values.email;
+    setEmail(email);
+
+    try {
+      const response = await fetch('http://localhost/subscribe', {
+        // Обновил путь
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await response.json();
+
+      if (data.message === 'Вы уже получили промокод!') {
+        // Если email уже зарегистрирован
+        message.info('Вы уже получили свой промокод!');
+      } else {
+        // Если email не найден, подписка успешна
+        await subscribeEmail(email);
+      }
+    } catch (error) {
+      message.error('Ошибка подключения к серверу!');
+    }
   };
+
+  const subscribeEmail = async (email) => {
+    try {
+      const response = await fetch('http://localhost/subscribe', {
+        // Используем полный путь
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setSubscribed(true);
+        message.success('Спасибо! Мы уже отправили промокод вам на почту.');
+      } else {
+        message.error(data.message || 'Ошибка подписки!');
+      }
+    } catch (error) {
+      message.error('Ошибка подключения к серверу!');
+    }
+  };
+
   const onFinishFailed = (errorInfo) => {
     message.error('Введите корректный email!');
   };

@@ -19,7 +19,7 @@ const SubscriptionForm = () => {
   const textColor = isDarkMode ? '#fff' : '#000';
   const backgroundColor = isDarkMode ? '#12172a' : '#f0f0f0';
 
-  const [loading, setLoading] = useState(false); // Состояние загрузки
+  const [loading, setLoading] = useState(false);
 
   const onFinish = async (values) => {
     setLoading(true);
