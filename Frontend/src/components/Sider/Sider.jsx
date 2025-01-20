@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import {
   AppstoreOutlined,
   MailOutlined,
@@ -14,11 +14,20 @@ import { ThemeContext } from './ThemeContext';
 import { Link } from 'react-router-dom';
 
 const SiderComponent = () => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    // Загружаем состояние из localStorage при инициализации
+    return localStorage.getItem('siderCollapsed') === 'true';
+  });
+
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [isRegisterModalVisible, setIsRegisterModalVisible] = useState(false);
 
   const { theme, toggleTheme } = useContext(ThemeContext);
+
+  // Сохраняем состояние в localStorage при изменении
+  useEffect(() => {
+    localStorage.setItem('siderCollapsed', collapsed);
+  }, [collapsed]);
 
   const toggleCollapsed = () => {
     setCollapsed(!collapsed);
