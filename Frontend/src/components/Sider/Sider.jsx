@@ -15,7 +15,6 @@ import { Link } from 'react-router-dom';
 
 const SiderComponent = () => {
   const [collapsed, setCollapsed] = useState(() => {
-    // Загружаем состояние из localStorage при инициализации
     return localStorage.getItem('siderCollapsed') === 'true';
   });
 
@@ -24,7 +23,6 @@ const SiderComponent = () => {
 
   const { theme, toggleTheme } = useContext(ThemeContext);
 
-  // Сохраняем состояние в localStorage при изменении
   useEffect(() => {
     localStorage.setItem('siderCollapsed', collapsed);
   }, [collapsed]);
