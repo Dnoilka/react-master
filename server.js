@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const port = 80;
@@ -12,10 +13,8 @@ app.use(bodyParser.json());
 
 app.use(express.static('frontend/dist'));
 
-// Файл для хранения промокодов
 const promoCodesFile = './promoCodes.json';
 
-// Чтение данных из файла
 function loadPromoCodes() {
   if (fs.existsSync(promoCodesFile)) {
     const data = fs.readFileSync(promoCodesFile);
@@ -24,19 +23,16 @@ function loadPromoCodes() {
   return {};
 }
 
-// Запись данных в файл
 function savePromoCodes(promoCodes) {
   fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
 }
 
 const promoCodesDB = loadPromoCodes();
 
-// Генерация уникального промокода
 function generatePromoCode() {
   return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
-// Настройка Nodemailer
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -63,10 +59,8 @@ app.post('/subscribe', async (req, res) => {
 
   promoCodesDB[email] = promoCode;
 
-  // Сохраняем данные о промокодах в файл
   savePromoCodes(promoCodesDB);
 
-  // Настройка письма
   const mailOptions = {
     from: `"Dominik Store" <${process.env.EMAIL_USER}>`,
     to: email,
@@ -87,6 +81,10 @@ app.post('/subscribe', async (req, res) => {
       .status(500)
       .json({ message: 'Ошибка отправки письма. Попробуйте позже.' });
   }
+});
+
+app.get('*', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'frontend', 'dist', 'index.html'));
 });
 
 app.listen(port, () => {
