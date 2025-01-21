@@ -34,7 +34,7 @@ const ContactPage = () => {
           width: '100%',
 
           boxSizing: 'border-box',
-          overflowX: 'hidden', // Убираем горизонтальный скроллинг
+          overflowX: 'hidden',
         }}
       >
         <section
@@ -160,6 +160,40 @@ const ContactPage = () => {
                   <Paragraph style={{ color: textColor }}>
                     info@example.com
                   </Paragraph>
+                  <div>
+                    <Title level={4} style={{ color: textColor }}>
+                      Рабочий Телефон
+                    </Title>
+                    <Paragraph style={{ color: textColor }}>
+                      +7 961 943-77-70
+                    </Paragraph>
+                  </div>
+                  <div>
+                    <Title level={4} style={{ color: textColor }}>
+                      Рабочее Время
+                    </Title>
+                    <Paragraph style={{ color: textColor }}>
+                      Понедельник 10:00 - 22:00
+                    </Paragraph>
+                    <Paragraph style={{ color: textColor }}>
+                      Вторник 10:00 - 22:00
+                    </Paragraph>
+                    <Paragraph style={{ color: textColor }}>
+                      Среда 10:00 - 22:00
+                    </Paragraph>
+                    <Paragraph style={{ color: textColor }}>
+                      Четверг 10:00 - 22:00
+                    </Paragraph>
+                    <Paragraph style={{ color: textColor }}>
+                      Пятница 10:00 - 22:00
+                    </Paragraph>
+                    <Paragraph style={{ color: textColor }}>
+                      Суббота 10:00 - 22:00
+                    </Paragraph>
+                    <Paragraph style={{ color: textColor }}>
+                      Воскресенье 10:00 - 22:00
+                    </Paragraph>
+                  </div>
                 </div>
               </Space>
             </Card>
@@ -190,7 +224,10 @@ const ContactPage = () => {
                     },
                   ]}
                 >
-                  <Input placeholder="Введите ваше имя" />
+                  <Input
+                    style={{ height: '50px' }}
+                    placeholder="Введите ваше имя"
+                  />
                 </Form.Item>
                 <Form.Item
                   name="email"
@@ -202,7 +239,10 @@ const ContactPage = () => {
                     { type: 'email', message: 'Введите корректный Email!' },
                   ]}
                 >
-                  <Input placeholder="Введите ваш Email" />
+                  <Input
+                    style={{ height: '50px' }}
+                    placeholder="Введите ваш Email"
+                  />
                 </Form.Item>
                 <Form.Item
                   name="message"
@@ -222,7 +262,7 @@ const ContactPage = () => {
                   <Button
                     type="primary"
                     htmlType="submit"
-                    style={{ width: '100%' }}
+                    style={{ width: '100%', height: '50PX' }}
                   >
                     Отправить
                   </Button>
