@@ -184,7 +184,7 @@ const SubscriptionForm = () => {
                 style={{
                   color: textColor,
                   borderColor: isDarkMode ? '#555' : '#ccc',
-                  backgroundColor: isDarkMode ? '#333' : '#fff', // добавляем фоновый цвет
+                  backgroundColor: isDarkMode ? '#333' : '#fff',
                 }}
               />
             </Form.Item>

@@ -4,6 +4,7 @@ import Header from '../components/Header/Header';
 import Sider from '../components/Sider/Sider';
 import ThemeProvider from '../components/Sider/ThemeContext';
 import CustomFooter from '../components/Footer/Footer';
+import Content from '../components/ContactPage/Content/ContactContet';
 
 const Contact = () => {
   return (
@@ -12,6 +13,7 @@ const Contact = () => {
         <Header />
         <Layout>
           <Sider />
+          <Content />
         </Layout>
         <CustomFooter />
       </Layout>
