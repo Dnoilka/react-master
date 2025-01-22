@@ -271,7 +271,6 @@ const ContactPage = () => {
             </Card>
           </Col>
         </Row>
-
         <Card
           style={{
             backgroundColor: isDarkMode ? '#1c2233' : '#fff',
@@ -286,16 +285,45 @@ const ContactPage = () => {
           <Title level={3} style={{ color: textColor }}>
             Мы на карте
           </Title>
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2188.9324984619197!2d55.19808606875078!3d51.77363836516874!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x417bf7636472d2d5%3A0x44b0bf6517979ff8!2z0KLQoNCmIMKr0JDRgNC80LDQtNCwIDLCuw!5e1!3m2!1sru!2sru!4v1727561865358!5m2!1sru!2sru"
+          <div
             style={{
+              position: 'relative',
+              overflow: 'hidden',
               width: '100%',
               height: '800px',
-              border: 'none',
             }}
-            allowFullScreen=""
-            loading="lazy"
-          ></iframe>
+          >
+            <a
+              href="https://yandex.ru/maps/org/dominik/101442983159/?utm_medium=mapframe&utm_source=maps"
+              style={{
+                color: '#eee',
+                fontSize: '12px',
+                position: 'absolute',
+                top: 0,
+              }}
+            >
+              Dominik
+            </a>
+            <a
+              href="https://yandex.ru/maps/48/orenburg/category/clothing_store/184107943/?utm_medium=mapframe&utm_source=maps"
+              style={{
+                color: '#eee',
+                fontSize: '12px',
+                position: 'absolute',
+                top: '14px',
+              }}
+            >
+              Магазин одежды в Оренбурге
+            </a>
+            <iframe
+              src="https://yandex.ru/map-widget/v1/?indoorLevel=1&ll=55.198619%2C51.775612&mode=search&oid=101442983159&ol=biz&sctx=ZAAAAAgBEAAaKAoSCSpWDcLccEtAEcU56ui45ElAEhIJfEYiNIKNzz8RPgPqzaj5tj8iBgABAgMEBSgKOABA258NSAFqAnJ1nQHNzMw9oAEAqAEAvQGfs4zQwgEG96nk8%2FkCggIO0JTQvtC80LjQvdC40LqKAgCSAgCaAgxkZXNrdG9wLW1hcHM%3D&sll=55.198748%2C51.775612&sspn=0.000963%2C0.000351&text=%D0%94%D0%BE%D0%BC%D0%B8%D0%BD%D0%B8%D0%BA&z=21"
+              width="100%"
+              height="800"
+              frameBorder="1"
+              allowFullScreen={true}
+              style={{ position: 'relative' }}
+            ></iframe>
+          </div>
         </Card>
       </Content>
     </Layout>
