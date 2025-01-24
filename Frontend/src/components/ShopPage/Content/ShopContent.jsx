@@ -106,15 +106,19 @@ const ShopContent = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [activeFilters, setActiveFilters] = useState({});
-  const [onlyWithDiscount, setOnlyWithDiscount] = useState(false); // Новый фильтр
+  const [onlyWithDiscount, setOnlyWithDiscount] = useState(false);
 
   const handleCategoryClick = (category) => {
-    setSelectedCategory(category);
+    setSelectedCategory((prevCategory) =>
+      prevCategory === category ? null : category
+    );
     setSelectedSubcategory(null); // Сбрасываем подкатегорию
   };
 
   const handleSubcategoryClick = (subcategory) => {
-    setSelectedSubcategory(subcategory);
+    setSelectedSubcategory((prevSubcategory) =>
+      prevSubcategory === subcategory ? null : subcategory
+    );
   };
 
   const handleFilterChange = (key, values) => {
@@ -126,7 +130,7 @@ const ShopContent = () => {
 
   const clearFilters = () => {
     setActiveFilters({});
-    setOnlyWithDiscount(false); // Сбрасываем фильтр скидок
+    setOnlyWithDiscount(false);
   };
 
   const hasActiveFilters =
@@ -146,7 +150,7 @@ const ShopContent = () => {
           : values.some((value) => product.name.includes(value))
     );
 
-    const matchesDiscount = !onlyWithDiscount || product.discount; // Проверяем наличие скидки
+    const matchesDiscount = !onlyWithDiscount || product.discount;
 
     return (
       matchesCategory && matchesSubcategory && matchesFilters && matchesDiscount
@@ -176,13 +180,16 @@ const ShopContent = () => {
           {categories.map((category) => (
             <Menu.SubMenu
               key={category.title}
-              title={category.title}
+              title={
+                <span
+                  style={{
+                    color: selectedCategory === category.title ? '#1890ff' : '',
+                  }}
+                >
+                  {category.title}
+                </span>
+              }
               onTitleClick={() => handleCategoryClick(category.title)}
-              style={{
-                background:
-                  selectedCategory === category.title ? '#e6f7ff' : '',
-                color: selectedCategory === category.title ? '#1890ff' : '',
-              }}
             >
               {category.subcategories.map((sub) => (
                 <Menu.Item
