@@ -146,7 +146,7 @@ const SiderComponent = () => {
         <Menu
           theme={theme}
           onClick={handleMenuClick}
-          style={{ width: '100%' }}
+          style={{ width: '100%', border: 'none' }}
           defaultSelectedKeys={['1']}
           mode="inline"
           items={items}

@@ -1,8 +1,4 @@
-// "
-// Можешь стилизировать эти dropdown вот так? Вот чтобы они были со стрелочкой,побольше и чтобы в подобрали для вас был выбор еденичный кружочком,а в остальных выбрать можно было бы несколько и они были квадратиком,а также нужна кнопка очистки фильтров
-// "
-
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Layout,
   Menu,
@@ -12,11 +8,13 @@ import {
   Col,
   Button,
   Space,
-  Checkbox,
   Dropdown,
+  Checkbox,
+  Switch,
 } from 'antd';
+import { DownOutlined } from '@ant-design/icons';
 
-const { Header, Content, Sider } = Layout;
+const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 
 const categories = [
@@ -55,6 +53,8 @@ const products = [
   {
     id: 1,
     name: 'Mademan Футболка',
+    category: 'Одежда',
+    subcategory: 'Майки',
     price: 780,
     oldPrice: 2599,
     discount: '-69%',
@@ -63,6 +63,8 @@ const products = [
   {
     id: 2,
     name: 'Demix Тайцы',
+    category: 'Спорт',
+    subcategory: 'Поло',
     price: 1759,
     oldPrice: 3499,
     discount: '-45%',
@@ -71,6 +73,8 @@ const products = [
   {
     id: 3,
     name: 'Fila Брюки спортивные',
+    category: 'Одежда',
+    subcategory: 'Брюки',
     price: 2529,
     oldPrice: 4599,
     discount: '-45%',
@@ -79,6 +83,8 @@ const products = [
   {
     id: 4,
     name: 'Envylab Лонгслив Ruff',
+    category: 'Одежда',
+    subcategory: 'Домашняя одежда',
     price: 1505,
     oldPrice: 5300,
     discount: '-71%',
@@ -93,98 +99,162 @@ const dropdownMenus = {
   Размер: ['S', 'M', 'L', 'XL', 'XXL'],
   Бренд: ['Nike', 'Adidas', 'Puma', 'Reebok'],
   Цена: ['До 1000 ₽', '1000-3000 ₽', '3000-5000 ₽', 'Больше 5000 ₽'],
+  'Страна производства': ['Армения', 'Турция', 'Россия'],
 };
 
-const createDropdownMenu = (items) => (
-  <Menu>
-    {items.map((item, index) => (
-      <Menu.Item key={index}>{item}</Menu.Item>
-    ))}
-  </Menu>
-);
-
 const ShopContent = () => {
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [activeFilters, setActiveFilters] = useState({});
+  const [onlyWithDiscount, setOnlyWithDiscount] = useState(false); // Новый фильтр
+
+  const handleCategoryClick = (category) => {
+    setSelectedCategory(category);
+    setSelectedSubcategory(null); // Сбрасываем подкатегорию
+  };
+
+  const handleSubcategoryClick = (subcategory) => {
+    setSelectedSubcategory(subcategory);
+  };
+
+  const handleFilterChange = (key, values) => {
+    setActiveFilters((prev) => ({
+      ...prev,
+      [key]: values,
+    }));
+  };
+
+  const clearFilters = () => {
+    setActiveFilters({});
+    setOnlyWithDiscount(false); // Сбрасываем фильтр скидок
+  };
+
+  const hasActiveFilters =
+    Object.values(activeFilters).some((value) => value && value.length > 0) ||
+    onlyWithDiscount;
+
+  const filteredProducts = products.filter((product) => {
+    const matchesCategory =
+      !selectedCategory || product.category === selectedCategory;
+    const matchesSubcategory =
+      !selectedSubcategory || product.subcategory === selectedSubcategory;
+
+    const matchesFilters = Object.entries(activeFilters).every(
+      ([key, values]) =>
+        values.length === 0
+          ? true
+          : values.some((value) => product.name.includes(value))
+    );
+
+    const matchesDiscount = !onlyWithDiscount || product.discount; // Проверяем наличие скидки
+
+    return (
+      matchesCategory && matchesSubcategory && matchesFilters && matchesDiscount
+    );
+  });
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <Header
+      <Sider
+        width={240}
         style={{
           background: '#fff',
-          padding: 0,
-          textAlign: 'center',
-          fontSize: 18,
+          padding: '20px',
+          overflowY: 'auto',
         }}
       >
-        <Title level={3} style={{ margin: 0 }}>
-          Магазин одежды
+        <Title level={4} style={{ marginBottom: '20px', color: '#333' }}>
+          Категории
         </Title>
-      </Header>
-      <Layout>
-        <Sider
-          width={240}
+        <Menu
+          mode="inline"
           style={{
-            background: '#f0f0f0',
-            padding: '20px',
-            overflowY: 'auto',
+            border: 'none',
+            fontSize: '14px',
           }}
         >
-          <Title level={4}>Категории</Title>
-          <Menu mode="inline" style={{ borderRight: 0 }}>
-            {categories.map((category, index) => (
-              <Menu.SubMenu key={index} title={category.title}>
-                {category.subcategories.map((sub, subIndex) => (
-                  <Menu.Item key={`${index}-${subIndex}`}>{sub}</Menu.Item>
-                ))}
-              </Menu.SubMenu>
-            ))}
-          </Menu>
-        </Sider>
-        <Layout>
-          <Content style={{ padding: '20px', background: '#fff' }}>
-            <Row gutter={[16, 16]} style={{ marginBottom: '20px' }}>
-              <Space size="middle">
-                {Object.keys(dropdownMenus).map((key) => (
-                  <Dropdown
-                    key={key}
-                    overlay={createDropdownMenu(dropdownMenus[key])}
-                    trigger={['click']}
-                  >
-                    <Button>{key}</Button>
-                  </Dropdown>
-                ))}
-                <Checkbox>Только со скидкой</Checkbox>
-              </Space>
-            </Row>
-            <Row gutter={[16, 16]}>
-              {products.map((product) => (
-                <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
-                  <Card
-                    hoverable
-                    cover={
-                      <img
-                        alt={product.name}
-                        src={product.image}
-                        style={{ height: '250px', objectFit: 'cover' }}
-                      />
-                    }
-                    style={{
-                      borderRadius: '8px',
-                      overflow: 'hidden',
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-                    }}
-                  >
-                    <Title level={5}>{product.name}</Title>
-                    <Text delete>{product.oldPrice} ₽</Text>{' '}
-                    <Text style={{ color: 'red', fontWeight: 'bold' }}>
-                      {product.price} ₽
-                    </Text>
-                    <br />
-                    <Text type="danger">{product.discount}</Text>
-                  </Card>
-                </Col>
+          {categories.map((category) => (
+            <Menu.SubMenu
+              key={category.title}
+              title={category.title}
+              onTitleClick={() => handleCategoryClick(category.title)}
+              style={{
+                background:
+                  selectedCategory === category.title ? '#e6f7ff' : '',
+                color: selectedCategory === category.title ? '#1890ff' : '',
+              }}
+            >
+              {category.subcategories.map((sub) => (
+                <Menu.Item
+                  key={sub}
+                  onClick={() => handleSubcategoryClick(sub)}
+                  style={{
+                    background: selectedSubcategory === sub ? '#e6f7ff' : '',
+                    color: selectedSubcategory === sub ? '#1890ff' : '',
+                  }}
+                >
+                  {sub}
+                </Menu.Item>
               ))}
-            </Row>
-          </Content>
-        </Layout>
+            </Menu.SubMenu>
+          ))}
+        </Menu>
+      </Sider>
+      <Layout>
+        <Content style={{ padding: '20px', background: '#fff' }}>
+          <Space size="large" style={{ marginBottom: '20px' }}>
+            {Object.keys(dropdownMenus).map((key) => (
+              <Dropdown
+                key={key}
+                overlay={
+                  <div style={{ padding: '10px', background: '#fff' }}>
+                    <Checkbox.Group
+                      options={dropdownMenus[key]}
+                      value={activeFilters[key] || []}
+                      onChange={(values) => handleFilterChange(key, values)}
+                    />
+                  </div>
+                }
+                trigger={['click']}
+              >
+                <Button>
+                  {key} <DownOutlined />
+                </Button>
+              </Dropdown>
+            ))}
+            <div>
+              <Text>Только со скидкой:</Text>
+              <Switch
+                checked={onlyWithDiscount}
+                onChange={(checked) => setOnlyWithDiscount(checked)}
+                style={{ marginLeft: '10px' }}
+              />
+            </div>
+            {hasActiveFilters && (
+              <Button onClick={clearFilters} type="primary" danger>
+                Очистить фильтры
+              </Button>
+            )}
+          </Space>
+          <Row gutter={[16, 16]}>
+            {filteredProducts.map((product) => (
+              <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
+                <Card
+                  hoverable
+                  cover={<img alt={product.name} src={product.image} />}
+                >
+                  <Title level={5}>{product.name}</Title>
+                  <Text delete>{product.oldPrice} ₽</Text>{' '}
+                  <Text style={{ color: 'red', fontWeight: 'bold' }}>
+                    {product.price} ₽
+                  </Text>
+                  <br />
+                  <Text type="danger">{product.discount}</Text>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        </Content>
       </Layout>
     </Layout>
   );
