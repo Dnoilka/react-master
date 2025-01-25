@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Layout,
   Menu,
@@ -10,7 +10,10 @@ import {
   Space,
   Dropdown,
   Checkbox,
+  Radio,
   Switch,
+  Spin,
+  Rate,
 } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 
@@ -95,24 +98,55 @@ const products = [
 const dropdownMenus = {
   'Подобрали для вас': ['Рекомендуемое', 'Популярное', 'Скидки'],
   Материалы: ['Хлопок', 'Шерсть', 'Кожа', 'Синтетика'],
-  Цвет: ['Красный', 'Синий', 'Зеленый', 'Черный'],
-  Размер: ['S', 'M', 'L', 'XL', 'XXL'],
-  Бренд: ['Nike', 'Adidas', 'Puma', 'Reebok'],
+  Цвет: ['Красный', 'Синий', 'Зеленый', 'Черный', 'Белый'],
+  Размер: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+  Бренд: ['Nike', 'Adidas', 'Puma', 'Reebok', 'Gucci'],
   Цена: ['До 1000 ₽', '1000-3000 ₽', '3000-5000 ₽', 'Больше 5000 ₽'],
-  'Страна производства': ['Армения', 'Турция', 'Россия'],
+  'Страна производства': ['Италия', 'Китай', 'Россия', 'Турция'],
 };
 
 const ShopContent = () => {
+  const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [activeFilters, setActiveFilters] = useState({});
   const [onlyWithDiscount, setOnlyWithDiscount] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    const queryParams = new URLSearchParams();
+    if (selectedCategory) queryParams.append('category', selectedCategory);
+    if (selectedSubcategory)
+      queryParams.append('subcategory', selectedSubcategory);
+    if (onlyWithDiscount) queryParams.append('discount', 'true');
+
+    Object.entries(activeFilters).forEach(([key, values]) => {
+      if (values.length) queryParams.append(key, values.join(','));
+    });
+
+    try {
+      const response = await fetch(
+        `http://localhost:80/api/products?${queryParams.toString()}`
+      );
+      const data = await response.json();
+      setProducts(data);
+    } catch (error) {
+      console.error('Ошибка загрузки продуктов:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProducts();
+  }, [selectedCategory, selectedSubcategory, onlyWithDiscount, activeFilters]);
 
   const handleCategoryClick = (category) => {
     setSelectedCategory((prevCategory) =>
       prevCategory === category ? null : category
     );
-    setSelectedSubcategory(null); // Сбрасываем подкатегорию
+    setSelectedSubcategory(null);
   };
 
   const handleSubcategoryClick = (subcategory) => {
@@ -136,26 +170,6 @@ const ShopContent = () => {
   const hasActiveFilters =
     Object.values(activeFilters).some((value) => value && value.length > 0) ||
     onlyWithDiscount;
-
-  const filteredProducts = products.filter((product) => {
-    const matchesCategory =
-      !selectedCategory || product.category === selectedCategory;
-    const matchesSubcategory =
-      !selectedSubcategory || product.subcategory === selectedSubcategory;
-
-    const matchesFilters = Object.entries(activeFilters).every(
-      ([key, values]) =>
-        values.length === 0
-          ? true
-          : values.some((value) => product.name.includes(value))
-    );
-
-    const matchesDiscount = !onlyWithDiscount || product.discount;
-
-    return (
-      matchesCategory && matchesSubcategory && matchesFilters && matchesDiscount
-    );
-  });
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
@@ -210,25 +224,50 @@ const ShopContent = () => {
       <Layout>
         <Content style={{ padding: '20px', background: '#fff' }}>
           <Space size="large" style={{ marginBottom: '20px' }}>
-            {Object.keys(dropdownMenus).map((key) => (
-              <Dropdown
-                key={key}
-                overlay={
-                  <div style={{ padding: '10px', background: '#fff' }}>
-                    <Checkbox.Group
-                      options={dropdownMenus[key]}
-                      value={activeFilters[key] || []}
-                      onChange={(values) => handleFilterChange(key, values)}
-                    />
-                  </div>
-                }
-                trigger={['click']}
-              >
-                <Button>
-                  {key} <DownOutlined />
-                </Button>
-              </Dropdown>
-            ))}
+            {Object.keys(dropdownMenus).map((key) =>
+              key === 'Подобрали для вас' ? (
+                <Dropdown
+                  key={key}
+                  overlay={
+                    <div style={{ padding: '10px', background: '#fff' }}>
+                      <Radio.Group
+                        options={dropdownMenus[key]}
+                        value={activeFilters[key]?.[0] || null}
+                        onChange={(e) =>
+                          handleFilterChange(
+                            key,
+                            e.target.value ? [e.target.value] : []
+                          )
+                        }
+                      />
+                    </div>
+                  }
+                  trigger={['click']}
+                >
+                  <Button>
+                    {key} <DownOutlined />
+                  </Button>
+                </Dropdown>
+              ) : (
+                <Dropdown
+                  key={key}
+                  overlay={
+                    <div style={{ padding: '10px', background: '#fff' }}>
+                      <Checkbox.Group
+                        options={dropdownMenus[key]}
+                        value={activeFilters[key] || []}
+                        onChange={(values) => handleFilterChange(key, values)}
+                      />
+                    </div>
+                  }
+                  trigger={['click']}
+                >
+                  <Button>
+                    {key} <DownOutlined />
+                  </Button>
+                </Dropdown>
+              )
+            )}
             <div>
               <Text>Только со скидкой:</Text>
               <Switch
@@ -243,24 +282,70 @@ const ShopContent = () => {
               </Button>
             )}
           </Space>
-          <Row gutter={[16, 16]}>
-            {filteredProducts.map((product) => (
-              <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
-                <Card
-                  hoverable
-                  cover={<img alt={product.name} src={product.image} />}
-                >
-                  <Title level={5}>{product.name}</Title>
-                  <Text delete>{product.oldPrice} ₽</Text>{' '}
-                  <Text style={{ color: 'red', fontWeight: 'bold' }}>
-                    {product.price} ₽
-                  </Text>
-                  <br />
-                  <Text type="danger">{product.discount}</Text>
-                </Card>
-              </Col>
-            ))}
-          </Row>
+          {loading ? (
+            <Spin tip="Загрузка продуктов..." />
+          ) : (
+            <Row gutter={[16, 16]}>
+              {products.length > 0 ? (
+                products.map((product) => (
+                  <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
+                    <Card
+                      hoverable
+                      cover={<img alt={product.name} src={product.image} />}
+                      style={{ position: 'relative' }}
+                      onMouseEnter={(e) => {
+                        const hoverDiv =
+                          e.currentTarget.querySelector('.size-hover');
+                        hoverDiv.style.display = 'block';
+                      }}
+                      onMouseLeave={(e) => {
+                        const hoverDiv =
+                          e.currentTarget.querySelector('.size-hover');
+                        hoverDiv.style.display = 'none';
+                      }}
+                    >
+                      <Title level={5}>
+                        {product.name} (
+                        {typeof product.rating === 'number' &&
+                        !isNaN(product.rating)
+                          ? product.rating.toFixed(1) + '★'
+                          : 'N/A'}
+                        )
+                      </Title>
+                      {product.oldPrice && (
+                        <Text delete>{product.oldPrice} ₽</Text>
+                      )}{' '}
+                      <Text style={{ color: 'red', fontWeight: 'bold' }}>
+                        {product.price} ₽
+                      </Text>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          bottom: '-50px',
+                          left: '0',
+                          right: '0',
+                          padding: '10px',
+                          backgroundColor: '#f5f5f5',
+                          textAlign: 'center',
+                          display: 'none',
+                        }}
+                        className="size-hover"
+                      >
+                        {product.sizes &&
+                          product.sizes.split(',').map((size) => (
+                            <Text key={size} style={{ margin: '0 5px' }}>
+                              {size}
+                            </Text>
+                          ))}
+                      </div>
+                    </Card>
+                  </Col>
+                ))
+              ) : (
+                <Text>Нет товаров для отображения.</Text>
+              )}
+            </Row>
+          )}
         </Content>
       </Layout>
     </Layout>

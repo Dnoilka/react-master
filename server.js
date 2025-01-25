@@ -5,15 +5,176 @@ const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const fs = require('fs');
 const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
 
 const app = express();
-const port = 80;
+const PORT = process.env.PORT || 80;
 
+app.use(cors());
 app.use(bodyParser.json());
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 
-app.use(express.static('frontend/dist'));
+// Указываем путь к файлу базы данных
+const dbFilePath = path.resolve(__dirname, 'database.sqlite');
 
-const promoCodesFile = './promoCodes.json';
+// Создаем или подключаемся к базе данных
+const db = new sqlite3.Database(dbFilePath, (err) => {
+  if (err) {
+    console.error('Ошибка подключения к базе данных:', err.message);
+    process.exit(1);
+  } else {
+    console.log(`База данных подключена: ${dbFilePath}`);
+  }
+});
+
+// Создание таблицы и заполнение данными (если таблицы не существует)
+db.serialize(() => {
+  db.run(
+    `
+    CREATE TABLE IF NOT EXISTS products (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      category TEXT,
+      subcategory TEXT,
+      price INTEGER,
+      oldPrice INTEGER,
+      discount TEXT,
+      image TEXT,
+      brand TEXT,
+      material TEXT,
+      color TEXT,
+      rating REAL,
+      sizes TEXT
+    )
+  `,
+    (err) => {
+      if (err) console.error('Ошибка создания таблицы:', err.message);
+    }
+  );
+
+  const products = [
+    [
+      'Классические брюки',
+      'Одежда',
+      'Брюки',
+      2500,
+      5000,
+      '-50%',
+      'https://via.placeholder.com/200x250',
+      'Gucci',
+      'Хлопок',
+      'Черный',
+      4.5,
+      'S,M,L',
+    ],
+    // ... другие продукты
+  ];
+
+  const stmt = db.prepare(`
+    INSERT INTO products (name, category, subcategory, price, oldPrice, discount, image, brand, material, color, rating, sizes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `);
+
+  db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
+    if (err) {
+      console.error('Ошибка проверки данных:', err.message);
+    } else if (row.count === 0) {
+      products.forEach((product) => {
+        // Преобразование `rating` в число или NULL
+        if (product[10] !== null && typeof product[10] !== 'number') {
+          product[10] = parseFloat(product[10]);
+        }
+        stmt.run(product, (err) => {
+          if (err) {
+            console.error('Ошибка вставки данных:', err.message);
+          }
+        });
+      });
+      console.log('Таблица products заполнена данными');
+    } else {
+      console.log('Таблица products уже содержит данные');
+    }
+    stmt.finalize();
+  });
+});
+
+// Маршрут для получения всех продуктов
+app.get('/api/products', (req, res) => {
+  const {
+    category,
+    subcategory,
+    discount,
+    brand,
+    material,
+    color,
+    size,
+    sortBy,
+  } = req.query;
+
+  let query = `SELECT * FROM products WHERE 1=1`;
+  const params = [];
+
+  if (category) {
+    query += ` AND category = ?`;
+    params.push(category);
+  }
+
+  if (subcategory) {
+    query += ` AND subcategory = ?`;
+    params.push(subcategory);
+  }
+
+  if (discount === 'true') {
+    query += ` AND discount != ''`;
+  }
+
+  if (brand) {
+    query += ` AND brand = ?`;
+    params.push(brand);
+  }
+
+  if (material) {
+    query += ` AND material = ?`;
+    params.push(material);
+  }
+
+  if (color) {
+    query += ` AND color = ?`;
+    params.push(color);
+  }
+
+  if (size) {
+    query += ` AND sizes LIKE ?`;
+    params.push(`%${size}%`);
+  }
+
+  if (sortBy) {
+    const validSortOptions = ['price', 'rating', 'discount'];
+    if (validSortOptions.includes(sortBy)) {
+      query += ` ORDER BY ${sortBy}`;
+    }
+  }
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Ошибка выполнения запроса:', err.message);
+      res.status(500).json({ error: 'Ошибка сервера' });
+    } else {
+      // Преобразование `rating` в числовой формат или null
+      rows.forEach((row) => {
+        if (row.rating !== null && typeof row.rating !== 'number') {
+          row.rating = parseFloat(row.rating);
+        }
+      });
+      res.json(rows);
+    }
+  });
+});
+
+// Промокоды
+const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
 
 function loadPromoCodes() {
   if (fs.existsSync(promoCodesFile)) {
@@ -76,17 +237,19 @@ app.post('/subscribe', async (req, res) => {
     await transporter.sendMail(mailOptions);
     res.status(200).json({ message: 'Промокод отправлен на вашу почту!' });
   } catch (error) {
-    console.error(error);
+    console.error('Ошибка отправки письма:', error.message);
     res
       .status(500)
       .json({ message: 'Ошибка отправки письма. Попробуйте позже.' });
   }
 });
 
+// Обработка остальных маршрутов (для SPA)
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'frontend', 'dist', 'index.html'));
 });
 
-app.listen(port, () => {
-  console.log('Server has been started on port ' + port);
+// Запуск сервера
+app.listen(PORT, () => {
+  console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
