@@ -32,8 +32,7 @@ const db = new sqlite3.Database(dbFilePath, (err) => {
 // Создание таблицы и заполнение данными (если таблицы не существует)
 db.serialize(() => {
   db.run(
-    `
-    CREATE TABLE IF NOT EXISTS products (
+    `CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT,
       category TEXT,
@@ -47,8 +46,7 @@ db.serialize(() => {
       color TEXT,
       rating REAL,
       sizes TEXT
-    )
-  `,
+    )`,
     (err) => {
       if (err) console.error('Ошибка создания таблицы:', err.message);
     }
@@ -72,20 +70,17 @@ db.serialize(() => {
     // ... другие продукты
   ];
 
-  const stmt = db.prepare(`
-    INSERT INTO products (name, category, subcategory, price, oldPrice, discount, image, brand, material, color, rating, sizes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `);
+  const stmt = db.prepare(
+    `INSERT INTO products (name, category, subcategory, price, oldPrice, discount, image, brand, material, color, rating, sizes)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  );
 
   db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
     if (err) {
       console.error('Ошибка проверки данных:', err.message);
     } else if (row.count === 0) {
       products.forEach((product) => {
-        // Преобразование `rating` в число или NULL
-        if (product[10] !== null && typeof product[10] !== 'number') {
-          product[10] = parseFloat(product[10]);
-        }
+        product[10] = parseFloat(product[10]) || null;
         stmt.run(product, (err) => {
           if (err) {
             console.error('Ошибка вставки данных:', err.message);
@@ -162,11 +157,8 @@ app.get('/api/products', (req, res) => {
       console.error('Ошибка выполнения запроса:', err.message);
       res.status(500).json({ error: 'Ошибка сервера' });
     } else {
-      // Преобразование `rating` в числовой формат или null
       rows.forEach((row) => {
-        if (row.rating !== null && typeof row.rating !== 'number') {
-          row.rating = parseFloat(row.rating);
-        }
+        row.rating = parseFloat(row.rating) || null;
       });
       res.json(rows);
     }
@@ -217,13 +209,11 @@ app.post('/subscribe', async (req, res) => {
   }
 
   const promoCode = generatePromoCode();
-
   promoCodesDB[email] = promoCode;
-
   savePromoCodes(promoCodesDB);
 
   const mailOptions = {
-    from: `"Dominik Store" <${process.env.EMAIL_USER}>`,
+    from: `Dominik Store <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Ваш промокод от Dominik Store!',
     html: `

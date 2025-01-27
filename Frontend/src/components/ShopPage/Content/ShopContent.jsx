@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Layout,
   Menu,
@@ -16,6 +16,7 @@ import {
   Rate,
 } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
+import { ThemeContext } from '../../Sider/ThemeContext'; // Импорт ThemeContext
 
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -52,49 +53,6 @@ const categories = [
   },
 ];
 
-const products = [
-  {
-    id: 1,
-    name: 'Mademan Футболка',
-    category: 'Одежда',
-    subcategory: 'Майки',
-    price: 780,
-    oldPrice: 2599,
-    discount: '-69%',
-    image: 'https://via.placeholder.com/200x250',
-  },
-  {
-    id: 2,
-    name: 'Demix Тайцы',
-    category: 'Спорт',
-    subcategory: 'Поло',
-    price: 1759,
-    oldPrice: 3499,
-    discount: '-45%',
-    image: 'https://via.placeholder.com/200x250',
-  },
-  {
-    id: 3,
-    name: 'Fila Брюки спортивные',
-    category: 'Одежда',
-    subcategory: 'Брюки',
-    price: 2529,
-    oldPrice: 4599,
-    discount: '-45%',
-    image: 'https://via.placeholder.com/200x250',
-  },
-  {
-    id: 4,
-    name: 'Envylab Лонгслив Ruff',
-    category: 'Одежда',
-    subcategory: 'Домашняя одежда',
-    price: 1505,
-    oldPrice: 5300,
-    discount: '-71%',
-    image: 'https://via.placeholder.com/200x250',
-  },
-];
-
 const dropdownMenus = {
   'Подобрали для вас': ['Рекомендуемое', 'Популярное', 'Скидки'],
   Материалы: ['Хлопок', 'Шерсть', 'Кожа', 'Синтетика'],
@@ -106,7 +64,12 @@ const dropdownMenus = {
 };
 
 const ShopContent = () => {
+  const { theme, toggleTheme } = useContext(ThemeContext); // Используем тему
+  const isDarkMode = theme === 'dark';
+  const textColor = isDarkMode ? '#fff' : '#000';
+  const backgroundColor = isDarkMode ? '#12172a' : '#f0f0f0';
   const [products, setProducts] = useState([]);
+
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [activeFilters, setActiveFilters] = useState({});
@@ -172,16 +135,16 @@ const ShopContent = () => {
     onlyWithDiscount;
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', backgroundColor }}>
       <Sider
         width={240}
         style={{
-          background: '#fff',
+          backgroundColor,
           padding: '20px',
           overflowY: 'auto',
         }}
       >
-        <Title level={4} style={{ marginBottom: '20px', color: '#333' }}>
+        <Title level={4} style={{ marginBottom: '20px', color: textColor }}>
           Категории
         </Title>
         <Menu
@@ -189,6 +152,7 @@ const ShopContent = () => {
           style={{
             border: 'none',
             fontSize: '14px',
+            backgroundColor,
           }}
         >
           {categories.map((category) => (
@@ -197,7 +161,10 @@ const ShopContent = () => {
               title={
                 <span
                   style={{
-                    color: selectedCategory === category.title ? '#1890ff' : '',
+                    color:
+                      selectedCategory === category.title
+                        ? '#1890ff'
+                        : textColor,
                   }}
                 >
                   {category.title}
@@ -211,7 +178,7 @@ const ShopContent = () => {
                   onClick={() => handleSubcategoryClick(sub)}
                   style={{
                     background: selectedSubcategory === sub ? '#e6f7ff' : '',
-                    color: selectedSubcategory === sub ? '#1890ff' : '',
+                    color: selectedSubcategory === sub ? '#1890ff' : textColor,
                   }}
                 >
                   {sub}
@@ -222,14 +189,14 @@ const ShopContent = () => {
         </Menu>
       </Sider>
       <Layout>
-        <Content style={{ padding: '20px', background: '#fff' }}>
+        <Content style={{ padding: '20px', backgroundColor }}>
           <Space size="large" style={{ marginBottom: '20px' }}>
             {Object.keys(dropdownMenus).map((key) =>
               key === 'Подобрали для вас' ? (
                 <Dropdown
                   key={key}
                   overlay={
-                    <div style={{ padding: '10px', background: '#fff' }}>
+                    <div style={{ padding: '10px', backgroundColor }}>
                       <Radio.Group
                         options={dropdownMenus[key]}
                         value={activeFilters[key]?.[0] || null}
@@ -252,7 +219,7 @@ const ShopContent = () => {
                 <Dropdown
                   key={key}
                   overlay={
-                    <div style={{ padding: '10px', background: '#fff' }}>
+                    <div style={{ padding: '10px', backgroundColor }}>
                       <Checkbox.Group
                         options={dropdownMenus[key]}
                         value={activeFilters[key] || []}
@@ -269,7 +236,7 @@ const ShopContent = () => {
               )
             )}
             <div>
-              <Text>Только со скидкой:</Text>
+              <Text style={{ color: textColor }}>Только со скидкой:</Text>
               <Switch
                 checked={onlyWithDiscount}
                 onChange={(checked) => setOnlyWithDiscount(checked)}
@@ -285,14 +252,40 @@ const ShopContent = () => {
           {loading ? (
             <Spin tip="Загрузка продуктов..." />
           ) : (
-            <Row gutter={[16, 16]}>
+            <Row
+              style={{ marginLeft: '-4px', marginRight: '-4px' }}
+              gutter={[4, 4]}
+            >
               {products.length > 0 ? (
                 products.map((product) => (
-                  <Col key={product.id} xs={24} sm={12} md={8} lg={6}>
+                  <Col
+                    key={product.id}
+                    xs={24}
+                    sm={12}
+                    md={8}
+                    lg={4}
+                    style={{ padding: '4px' }}
+                  >
                     <Card
                       hoverable
-                      cover={<img alt={product.name} src={product.image} />}
-                      style={{ position: 'relative' }}
+                      cover={
+                        <img
+                          alt={product.name}
+                          src={product.image}
+                          style={{
+                            width: '100%',
+                            height: '250px',
+                            objectFit: 'cover',
+                          }}
+                        />
+                      }
+                      style={{
+                        position: 'relative',
+                        backgroundColor: isDarkMode ? '#1c2233' : '#fff',
+                        color: textColor,
+                        width: '250px', // Фиксированная ширина
+                        height: '353px', // Фиксированная высота
+                      }}
                       onMouseEnter={(e) => {
                         const hoverDiv =
                           e.currentTarget.querySelector('.size-hover');
@@ -304,7 +297,16 @@ const ShopContent = () => {
                         hoverDiv.style.display = 'none';
                       }}
                     >
-                      <Title level={5}>
+                      <Title
+                        level={5}
+                        style={{
+                          fontSize: '15px',
+                          color: textColor,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
                         {product.name} (
                         {typeof product.rating === 'number' &&
                         !isNaN(product.rating)
@@ -313,7 +315,9 @@ const ShopContent = () => {
                         )
                       </Title>
                       {product.oldPrice && (
-                        <Text delete>{product.oldPrice} ₽</Text>
+                        <Text delete style={{ color: textColor }}>
+                          {product.oldPrice} ₽
+                        </Text>
                       )}{' '}
                       <Text style={{ color: 'red', fontWeight: 'bold' }}>
                         {product.price} ₽
@@ -325,7 +329,7 @@ const ShopContent = () => {
                           left: '0',
                           right: '0',
                           padding: '10px',
-                          backgroundColor: '#f5f5f5',
+                          backgroundColor: isDarkMode ? '#333' : '#f5f5f5',
                           textAlign: 'center',
                           display: 'none',
                         }}
@@ -342,7 +346,9 @@ const ShopContent = () => {
                   </Col>
                 ))
               ) : (
-                <Text>Нет товаров для отображения.</Text>
+                <Text style={{ color: textColor }}>
+                  Нет товаров для отображения.
+                </Text>
               )}
             </Row>
           )}
