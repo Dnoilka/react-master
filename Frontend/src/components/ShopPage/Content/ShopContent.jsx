@@ -16,7 +16,7 @@ import {
   Rate,
 } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
-import { ThemeContext } from '../../Sider/ThemeContext'; // Импорт ThemeContext
+import { ThemeContext } from '../../Sider/ThemeContext';
 
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -64,7 +64,7 @@ const dropdownMenus = {
 };
 
 const ShopContent = () => {
-  const { theme, toggleTheme } = useContext(ThemeContext); // Используем тему
+  const { theme, toggleTheme } = useContext(ThemeContext);
   const isDarkMode = theme === 'dark';
   const textColor = isDarkMode ? '#fff' : '#000';
   const backgroundColor = isDarkMode ? '#12172a' : '#f0f0f0';
@@ -283,8 +283,8 @@ const ShopContent = () => {
                         position: 'relative',
                         backgroundColor: isDarkMode ? '#1c2233' : '#fff',
                         color: textColor,
-                        width: '250px', // Фиксированная ширина
-                        height: '353px', // Фиксированная высота
+                        width: '250px',
+                        height: '353px',
                       }}
                       onMouseEnter={(e) => {
                         const hoverDiv =
