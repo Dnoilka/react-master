@@ -15,10 +15,12 @@ import {
   Spin,
   Alert,
   ConfigProvider,
+  Empty,
 } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
 import { ThemeContext } from '../../Sider/ThemeContext';
 import { debounce } from 'lodash-es';
+
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
 
@@ -54,20 +56,25 @@ const categories = [
   },
 ];
 
-const dropdownMenus = {
-  'Подобрали для вас': [
-    'Подобрали для вас',
-    'Новинки',
-    'Сначала дороже',
-    'Сначала дешевле',
-    'По величине скидки',
-  ],
-  Материалы: ['Хлопок', 'Шерсть', 'Кожа', 'Синтетика'],
-  Цвет: ['Красный', 'Синий', 'Зеленый', 'Черный', 'Белый'],
-  Размер: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
-  Бренд: ['Nike', 'Adidas', 'Puma', 'Reebok', 'Gucci'],
-  Цена: ['До 1000 ₽', '1000-3000 ₽', '3000-5000 ₽', 'Больше 5000 ₽'],
-  'Страна производства': ['Италия', 'Китай', 'Россия', 'Турция'],
+const filterOptions = {
+  sort: ['Новинки', 'Сначала дороже', 'Сначала дешевле', 'По величине скидки'],
+  filters: {
+    material: ['Хлопок', 'Шерсть', 'Кожа', 'Синтетика'],
+    color: ['Красный', 'Синий', 'Зеленый', 'Черный', 'Белый'],
+    size: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+    brand: ['Nike', 'Adidas', 'Puma', 'Reebok', 'Gucci'],
+    country: ['Италия', 'Китай', 'Россия', 'Турция'],
+  },
+  priceRanges: ['До 1000 ₽', '1000-3000 ₽', '3000-5000 ₽', 'Больше 5000 ₽'],
+};
+
+const filterLabels = {
+  material: 'Материалы',
+  color: 'Цвет',
+  size: 'Размер',
+  brand: 'Бренд',
+  country: 'Страна производства',
+  price: 'Цена',
 };
 
 const ShopContent = () => {
@@ -76,81 +83,142 @@ const ShopContent = () => {
   const textColor = isDarkMode ? '#fff' : '#000';
   const backgroundColor = isDarkMode ? '#12172a' : '#f0f0f0';
 
-  const [products, setProducts] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [activeFilters, setActiveFilters] = useState({});
-  const [onlyWithDiscount, setOnlyWithDiscount] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [state, setState] = useState({
+    products: [],
+    selectedCategory: null,
+    selectedSubcategory: null,
+    filters: {
+      material: [],
+      color: [],
+      size: [],
+      brand: [],
+      country: [],
+    },
+    sort: null,
+    priceRange: [],
+    onlyWithDiscount: false,
+    loading: false,
+    error: null,
+  });
+
+  const buildQueryParams = useCallback(() => {
+    const params = new URLSearchParams();
+
+    if (state.selectedCategory) {
+      params.append('category', state.selectedCategory);
+    }
+
+    if (state.selectedSubcategory) {
+      params.append('subcategory', state.selectedSubcategory);
+    }
+
+    if (state.onlyWithDiscount) {
+      params.append('discount', 'true');
+    }
+
+    if (state.sort) {
+      params.append('sortBy', state.sort);
+    }
+
+    Object.entries(state.filters).forEach(([key, values]) => {
+      if (values.length > 0) {
+        params.append(key, values.join(','));
+      }
+    });
+
+    state.priceRange.forEach((range) => {
+      switch (range) {
+        case 'До 1000 ₽':
+          params.append('price', '0-1000');
+          break;
+        case '1000-3000 ₽':
+          params.append('price', '1000-3000');
+          break;
+        case '3000-5000 ₽':
+          params.append('price', '3000-5000');
+          break;
+        case 'Больше 5000 ₽':
+          params.append('price', '5000-');
+          break;
+        default:
+          break;
+      }
+    });
+
+    return params.toString();
+  }, [state]);
 
   const fetchProducts = useCallback(
     debounce(async (params) => {
-      setLoading(true);
-      setError(null);
       try {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
         const response = await fetch(
-          `http://localhost:80/api/products?${params.toString()}`
+          `http://localhost:80/api/products?${params}`
         );
-        if (!response.ok) throw new Error('Ошибка загрузки данных');
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
-        setProducts(data);
+        setState((prev) => ({ ...prev, products: data }));
       } catch (err) {
-        setError(err.message);
-        setProducts([]);
+        setState((prev) => ({
+          ...prev,
+          error: err.message || 'Не удалось загрузить товары',
+          products: [],
+        }));
       } finally {
-        setLoading(false);
+        setState((prev) => ({ ...prev, loading: false }));
       }
     }, 300),
     []
   );
 
   useEffect(() => {
-    const queryParams = new URLSearchParams();
-    if (selectedCategory) queryParams.append('category', selectedCategory);
-    if (selectedSubcategory)
-      queryParams.append('subcategory', selectedSubcategory);
-    if (onlyWithDiscount) queryParams.append('discount', 'true');
+    const params = buildQueryParams();
+    fetchProducts(params);
+  }, [buildQueryParams, fetchProducts]);
 
-    Object.entries(activeFilters).forEach(([key, values]) => {
-      if (values.length) queryParams.append(key, values.join(','));
-    });
-
-    fetchProducts(queryParams);
-  }, [
-    selectedCategory,
-    selectedSubcategory,
-    onlyWithDiscount,
-    activeFilters,
-    fetchProducts,
-  ]);
-
-  const handleCategoryClick = useCallback((category) => {
-    setSelectedCategory((prev) => (prev === category ? null : category));
-    setSelectedSubcategory(null);
-  }, []);
-
-  const handleSubcategoryClick = useCallback((subcategory) => {
-    setSelectedSubcategory((prev) =>
-      prev === subcategory ? null : subcategory
-    );
-  }, []);
-
-  const handleFilterChange = useCallback((key, values) => {
-    setActiveFilters((prev) => ({
+  const handleFilterChange = (filterType, values) => {
+    setState((prev) => ({
       ...prev,
-      [key]: values,
+      filters: { ...prev.filters, [filterType]: values },
     }));
-  }, []);
+  };
 
-  const clearFilters = useCallback(() => {
-    setActiveFilters({});
-    setOnlyWithDiscount(false);
-  }, []);
+  const handlePriceChange = (values) => {
+    setState((prev) => ({ ...prev, priceRange: values }));
+  };
+
+  const handleSortChange = (value) => {
+    setState((prev) => ({ ...prev, sort: value }));
+  };
+
+  const clearFilters = () => {
+    setState((prev) => ({
+      ...prev,
+      selectedCategory: null,
+      selectedSubcategory: null,
+      filters: {
+        material: [],
+        color: [],
+        size: [],
+        brand: [],
+        country: [],
+      },
+      priceRange: [],
+      onlyWithDiscount: false,
+      sort: null,
+    }));
+  };
 
   const hasActiveFilters =
-    Object.values(activeFilters).some((value) => value?.length > 0) ||
-    onlyWithDiscount;
+    Object.values(state.filters).some((v) => v.length > 0) ||
+    state.priceRange.length > 0 ||
+    state.onlyWithDiscount ||
+    state.selectedCategory ||
+    state.selectedSubcategory;
 
   const antTheme = {
     token: {
@@ -160,234 +228,344 @@ const ShopContent = () => {
       colorPrimary: '#1890ff',
     },
     components: {
-      Dropdown: {
-        colorBgElevated: backgroundColor,
-        colorText: textColor,
-      },
       Card: {
         colorBgContainer: isDarkMode ? '#1c2233' : '#fff',
+        colorBorderSecondary: isDarkMode ? '#2d3746' : '#f0f0f0',
+      },
+      Dropdown: {
+        colorBgElevated: isDarkMode ? '#1c2233' : '#fff',
+        colorText: textColor,
+      },
+      Menu: {
+        itemBg: isDarkMode ? '#1c2233' : '#fff',
+        itemHoverBg: isDarkMode ? '#2d3746' : '#fafafa',
       },
     },
   };
 
   return (
-    <ConfigProvider theme={antTheme}>
+    <ConfigProvider
+      theme={antTheme}
+      renderEmpty={() => (
+        <Empty
+          description="Товаров не найдено"
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          imageStyle={{
+            height: 60,
+            filter: isDarkMode ? 'invert(1)' : 'none',
+          }}
+        />
+      )}
+    >
       <Layout style={{ minHeight: '100vh', backgroundColor }}>
         <Sider
-          width={240}
+          width={280}
           style={{
-            backgroundColor,
-            padding: '20px',
-            overflowY: 'auto',
+            backgroundColor: antTheme.token.colorBgContainer,
             borderRight: `1px solid ${antTheme.token.colorBorder}`,
           }}
+          breakpoint="lg"
+          collapsedWidth="0"
         >
-          <Title level={4} style={{ marginBottom: '20px', color: textColor }}>
-            Категории
-          </Title>
-          <Menu
-            mode="inline"
-            style={{
-              border: 'none',
-              fontSize: '14px',
-              backgroundColor,
-            }}
-          >
-            {categories.map((category) => (
-              <Menu.SubMenu
-                key={category.title}
-                title={
-                  <span
-                    style={{
-                      color:
-                        selectedCategory === category.title
-                          ? antTheme.token.colorPrimary
-                          : textColor,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {category.title}
-                  </span>
-                }
-                onTitleClick={() => handleCategoryClick(category.title)}
-              >
-                {category.subcategories.map((sub) => (
-                  <Menu.Item
-                    key={sub}
-                    onClick={() => handleSubcategoryClick(sub)}
-                    style={{
-                      background:
-                        selectedSubcategory === sub
-                          ? '#e6f7ff20'
-                          : 'transparent',
-                      color:
-                        selectedSubcategory === sub
-                          ? antTheme.token.colorPrimary
-                          : textColor,
-                    }}
-                  >
-                    {sub}
-                  </Menu.Item>
-                ))}
-              </Menu.SubMenu>
-            ))}
-          </Menu>
+          <div style={{ padding: '24px 16px' }}>
+            <Title
+              level={4}
+              style={{
+                color: textColor,
+                marginBottom: 24,
+                paddingLeft: 8,
+              }}
+            >
+              Категории
+            </Title>
+            <Menu
+              mode="inline"
+              style={{
+                background: 'transparent',
+                borderRight: 0,
+              }}
+              selectedKeys={[state.selectedCategory, state.selectedSubcategory]}
+            >
+              {categories.map((category) => (
+                <Menu.SubMenu
+                  key={category.title}
+                  title={
+                    <span
+                      style={{
+                        color:
+                          state.selectedCategory === category.title
+                            ? antTheme.token.colorPrimary
+                            : textColor,
+                        fontWeight: 600,
+                        fontSize: 15,
+                      }}
+                    >
+                      {category.title}
+                    </span>
+                  }
+                  onTitleClick={() =>
+                    setState((prev) => ({
+                      ...prev,
+                      selectedCategory:
+                        prev.selectedCategory === category.title
+                          ? null
+                          : category.title,
+                      selectedSubcategory: null,
+                    }))
+                  }
+                >
+                  {category.subcategories.map((sub) => (
+                    <Menu.Item
+                      key={sub}
+                      onClick={() =>
+                        setState((prev) => ({
+                          ...prev,
+                          selectedSubcategory:
+                            prev.selectedSubcategory === sub ? null : sub,
+                        }))
+                      }
+                      style={{
+                        background:
+                          state.selectedSubcategory === sub
+                            ? '#e6f7ff20'
+                            : 'transparent',
+                        color:
+                          state.selectedSubcategory === sub
+                            ? antTheme.token.colorPrimary
+                            : textColor,
+                        fontSize: 14,
+                        margin: 4,
+                        borderRadius: 6,
+                      }}
+                    >
+                      {sub}
+                    </Menu.Item>
+                  ))}
+                </Menu.SubMenu>
+              ))}
+            </Menu>
+          </div>
         </Sider>
 
-        <Layout>
-          <Content style={{ padding: '20px', backgroundColor }}>
-            {error && (
-              <Alert
-                message="Ошибка"
-                description={error}
-                type="error"
-                showIcon
-                closable
-                style={{ marginBottom: 20 }}
-              />
-            )}
-
-            <Space wrap size="large" style={{ marginBottom: '20px' }}>
-              {Object.keys(dropdownMenus).map((key) =>
-                key === 'Подобрали для вас' ? (
-                  <Dropdown
-                    key={key}
-                    menu={{
-                      items: dropdownMenus[key].map((item) => ({
-                        key: item,
-                        label: (
-                          <Radio
-                            value={item}
-                            checked={activeFilters[key]?.[0] === item}
-                            style={{ color: textColor }}
-                          >
-                            {item}
-                          </Radio>
-                        ),
-                      })),
-                      onClick: ({ key: value }) =>
-                        handleFilterChange(key, [value]),
-                    }}
-                    trigger={['click']}
-                  >
-                    <Button>
-                      {key} <DownOutlined />
-                    </Button>
-                  </Dropdown>
-                ) : (
-                  <Dropdown
-                    key={key}
-                    menu={{
-                      items: dropdownMenus[key].map((item) => ({
-                        key: item,
-                        label: (
-                          <Checkbox
-                            checked={activeFilters[key]?.includes(item)}
-                            style={{ color: textColor }}
-                          >
-                            {item}
-                          </Checkbox>
-                        ),
-                      })),
-                      selectable: true,
-                      multiple: true,
-                      onSelect: ({ key: value }) => {
-                        const currentValues = activeFilters[key] || [];
-                        const newValues = currentValues.includes(value)
-                          ? currentValues.filter((v) => v !== value)
-                          : [...currentValues, value];
-                        handleFilterChange(key, newValues);
-                      },
-                    }}
-                    trigger={['click']}
-                  >
-                    <Button>
-                      {key} <DownOutlined />
-                    </Button>
-                  </Dropdown>
-                )
-              )}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Text style={{ color: textColor }}>Только со скидкой:</Text>
-                <Switch
-                  checked={onlyWithDiscount}
-                  onChange={setOnlyWithDiscount}
-                />
-              </div>
-              {hasActiveFilters && (
-                <Button onClick={clearFilters} type="primary" danger>
-                  Очистить фильтры
-                </Button>
-              )}
-            </Space>
-
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: 40 }}>
-                <Spin tip="Загрузка..." size="large" />
-              </div>
-            ) : (
-              <Row gutter={[16, 16]} justify="start">
-                {products.map((product) => (
-                  <Col
-                    key={product.id}
-                    xs={24}
-                    sm={12}
-                    md={8}
-                    lg={6}
-                    xl={4}
-                    style={{ minWidth: 250 }}
-                  >
-                    <Card
-                      hoverable
-                      cover={
-                        <div style={{ height: 250, position: 'relative' }}>
-                          <img
-                            alt={product.name}
-                            src={product.image || '/placeholder.jpg'}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                            }}
-                          />
-                          {product.discount && (
-                            <div
-                              style={{
-                                position: 'absolute',
-                                top: 10,
-                                right: 10,
-                                backgroundColor: 'red',
-                                color: 'white',
-                                padding: '2px 8px',
-                                borderRadius: 4,
-                                fontSize: 12,
-                              }}
-                            >
-                              -{product.discount}%
-                            </div>
-                          )}
-                        </div>
-                      }
-                      bodyStyle={{ padding: 12 }}
+        <Content style={{ padding: 24, backgroundColor }}>
+          <Space wrap size="middle" style={{ marginBottom: 24, width: '100%' }}>
+            <Dropdown
+              menu={{
+                items: filterOptions.sort.map((item) => ({
+                  key: item,
+                  label: (
+                    <Radio
+                      checked={state.sort === item}
+                      onChange={() => handleSortChange(item)}
+                      style={{ color: textColor }}
                     >
+                      {item}
+                    </Radio>
+                  ),
+                })),
+              }}
+              trigger={['click']}
+            >
+              <Button style={{ minWidth: 120 }}>
+                Сортировка <DownOutlined />
+              </Button>
+            </Dropdown>
+
+            {Object.entries(filterOptions.filters).map(([key, values]) => (
+              <Dropdown
+                key={key}
+                menu={{
+                  items: values.map((value) => ({
+                    key: value,
+                    label: (
+                      <Checkbox
+                        checked={state.filters[key].includes(value)}
+                        onChange={(e) => {
+                          const newValues = e.target.checked
+                            ? [...state.filters[key], value]
+                            : state.filters[key].filter((v) => v !== value);
+                          handleFilterChange(key, newValues);
+                        }}
+                        style={{ color: textColor }}
+                      >
+                        {value}
+                      </Checkbox>
+                    ),
+                  })),
+                  style: { maxHeight: 300, overflowY: 'auto' },
+                }}
+                trigger={['click']}
+              >
+                <Button style={{ minWidth: 140 }}>
+                  {filterLabels[key]} <DownOutlined />
+                </Button>
+              </Dropdown>
+            ))}
+
+            <Dropdown
+              menu={{
+                items: filterOptions.priceRanges.map((range) => ({
+                  key: range,
+                  label: (
+                    <Checkbox
+                      checked={state.priceRange.includes(range)}
+                      onChange={(e) => {
+                        const newValues = e.target.checked
+                          ? [...state.priceRange, range]
+                          : state.priceRange.filter((r) => r !== range);
+                        handlePriceChange(newValues);
+                      }}
+                      style={{ color: textColor }}
+                    >
+                      {range}
+                    </Checkbox>
+                  ),
+                })),
+              }}
+              trigger={['click']}
+            >
+              <Button style={{ minWidth: 120 }}>
+                {filterLabels.price} <DownOutlined />
+              </Button>
+            </Dropdown>
+
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '6px 12px',
+                borderRadius: 6,
+                background: antTheme.token.colorBgContainer,
+              }}
+            >
+              <Text style={{ color: textColor }}>Со скидкой:</Text>
+              <Switch
+                checked={state.onlyWithDiscount}
+                onChange={(checked) =>
+                  setState((prev) => ({
+                    ...prev,
+                    onlyWithDiscount: checked,
+                  }))
+                }
+              />
+            </div>
+
+            {hasActiveFilters && (
+              <Button onClick={clearFilters} danger style={{ marginLeft: 12 }}>
+                Сбросить всё
+              </Button>
+            )}
+          </Space>
+
+          {state.error && (
+            <Alert
+              type="error"
+              message="Ошибка загрузки"
+              description={state.error}
+              showIcon
+              closable
+              style={{
+                marginBottom: 24,
+                border: `1px solid ${isDarkMode ? '#2a1215' : '#ffccc7'}`,
+              }}
+            />
+          )}
+
+          {state.loading ? (
+            <div
+              style={{
+                textAlign: 'center',
+                padding: 80,
+                background: antTheme.token.colorBgContainer,
+                borderRadius: 8,
+              }}
+            >
+              <Spin
+                size="large"
+                tip="Загрузка товаров..."
+                style={{ color: textColor }}
+              />
+            </div>
+          ) : (
+            <Row gutter={[24, 24]} justify="start">
+              {state.products.map((product) => (
+                <Col
+                  key={product.id}
+                  xs={24}
+                  sm={12}
+                  md={8}
+                  lg={6}
+                  xl={4}
+                  xxl={3}
+                >
+                  <Card
+                    hoverable
+                    style={{
+                      height: '100%',
+                      border: `1px solid ${antTheme.token.colorBorder}`,
+                    }}
+                    cover={
+                      <div
+                        style={{
+                          height: 320,
+                          position: 'relative',
+                          background: `url(${
+                            product.image || '/placeholder.jpg'
+                          }) center/cover no-repeat`,
+                        }}
+                      >
+                        {product.discount && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: 12,
+                              right: 12,
+                              backgroundColor: '#ff4d4f',
+                              color: '#fff',
+                              padding: '4px 10px',
+                              borderRadius: 4,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                            }}
+                          >
+                            {product.discount}
+                          </div>
+                        )}
+                      </div>
+                    }
+                    bodyStyle={{
+                      padding: 16,
+                      background: antTheme.token.colorBgContainer,
+                    }}
+                  >
+                    <div style={{ minHeight: 110 }}>
                       <Title
                         level={5}
                         style={{
-                          fontSize: 14,
+                          fontSize: 15,
                           marginBottom: 8,
                           color: textColor,
                         }}
+                        ellipsis={{ rows: 2 }}
                       >
                         {product.name}
                       </Title>
 
-                      <div style={{ marginBottom: 8 }}>
+                      <div style={{ marginBottom: 12 }}>
                         {product.rating && (
-                          <Text style={{ color: '#faad14', marginRight: 8 }}>
+                          <Text
+                            style={{
+                              color: '#faad14',
+                              marginRight: 8,
+                              fontSize: 14,
+                            }}
+                          >
                             ★{product.rating.toFixed(1)}
                           </Text>
                         )}
-                        {product.reviews && (
+                        {product.reviews > 0 && (
                           <Text type="secondary" style={{ fontSize: 12 }}>
                             ({product.reviews} отзывов)
                           </Text>
@@ -395,7 +573,7 @@ const ShopContent = () => {
                       </div>
 
                       <div>
-                        {product.oldPrice && (
+                        {product.oldPrice > 0 && (
                           <Text
                             delete
                             style={{
@@ -404,7 +582,7 @@ const ShopContent = () => {
                               fontSize: 12,
                             }}
                           >
-                            {product.oldPrice}₽
+                            {product.oldPrice.toLocaleString()}₽
                           </Text>
                         )}
                         <Text
@@ -414,25 +592,16 @@ const ShopContent = () => {
                             fontSize: 16,
                           }}
                         >
-                          {product.price}₽
+                          {product.price.toLocaleString()}₽
                         </Text>
                       </div>
-                    </Card>
-                  </Col>
-                ))}
-              </Row>
-            )}
-
-            {!loading && products.length === 0 && (
-              <div style={{ textAlign: 'center', padding: 40 }}>
-                <Text style={{ color: textColor, fontSize: 16 }}>
-                  🧐 Товаров не найдено. Попробуйте изменить параметры
-                  фильтрации
-                </Text>
-              </div>
-            )}
-          </Content>
-        </Layout>
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
+        </Content>
       </Layout>
     </ConfigProvider>
   );
