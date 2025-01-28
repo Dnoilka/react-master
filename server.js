@@ -165,7 +165,6 @@ app.get('/api/products', (req, res) => {
   });
 });
 
-// Промокоды
 const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
 
 function loadPromoCodes() {
@@ -234,12 +233,10 @@ app.post('/subscribe', async (req, res) => {
   }
 });
 
-// Обработка остальных маршрутов (для SPA)
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'frontend', 'dist', 'index.html'));
 });
 
-// Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
 });
