@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  useCallback,
+  useMemo,
+} from 'react';
 import {
   Layout,
   Menu,
@@ -99,9 +105,10 @@ const ShopContent = () => {
     onlyWithDiscount: false,
     loading: false,
     error: null,
+    isInitialLoad: true,
   });
 
-  const buildQueryParams = useCallback(() => {
+  const buildQueryParams = useMemo(() => {
     const params = new URLSearchParams();
 
     if (state.selectedCategory) {
@@ -146,12 +153,21 @@ const ShopContent = () => {
     });
 
     return params.toString();
-  }, [state]);
+  }, [
+    state.selectedCategory,
+    state.selectedSubcategory,
+    state.onlyWithDiscount,
+    state.sort,
+    state.filters,
+    state.priceRange,
+  ]);
 
   const fetchProducts = useCallback(
     debounce(async (params) => {
-      try {
+      if (state.isInitialLoad) {
         setState((prev) => ({ ...prev, loading: true, error: null }));
+      }
+      try {
         const response = await fetch(
           `http://localhost:80/api/products?${params}`
         );
@@ -161,22 +177,28 @@ const ShopContent = () => {
         }
 
         const data = await response.json();
-        setState((prev) => ({ ...prev, products: data }));
+        setState((prev) => ({
+          ...prev,
+          products: data,
+          loading: false,
+          error: null,
+          isInitialLoad: false,
+        }));
       } catch (err) {
         setState((prev) => ({
           ...prev,
           error: err.message || 'Не удалось загрузить товары',
           products: [],
+          loading: false,
+          isInitialLoad: false,
         }));
-      } finally {
-        setState((prev) => ({ ...prev, loading: false }));
       }
-    }, 300),
-    []
+    }, 500),
+    [state.isInitialLoad]
   );
 
   useEffect(() => {
-    const params = buildQueryParams();
+    const params = buildQueryParams;
     fetchProducts(params);
   }, [buildQueryParams, fetchProducts]);
 
@@ -472,7 +494,7 @@ const ShopContent = () => {
             />
           )}
 
-          {state.loading ? (
+          {state.loading && state.isInitialLoad ? (
             <div
               style={{
                 textAlign: 'center',
