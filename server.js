@@ -16,86 +16,98 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 
-// Указываем путь к файлу базы данных
 const dbFilePath = path.resolve(__dirname, 'database.sqlite');
+const db = new sqlite3.Database(dbFilePath);
 
-// Создаем или подключаемся к базе данных
-const db = new sqlite3.Database(dbFilePath, (err) => {
-  if (err) {
-    console.error('Ошибка подключения к базе данных:', err.message);
-    process.exit(1);
-  } else {
-    console.log(`База данных подключена: ${dbFilePath}`);
-  }
-});
-
-// Создание таблицы и заполнение данными (если таблицы не существует)
 db.serialize(() => {
-  db.run(
-    `CREATE TABLE IF NOT EXISTS products (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      category TEXT,
-      subcategory TEXT,
-      price INTEGER,
-      oldPrice INTEGER,
-      discount TEXT,
-      image TEXT,
-      brand TEXT,
-      material TEXT,
-      color TEXT,
-      rating REAL,
-      sizes TEXT
-    )`,
-    (err) => {
-      if (err) console.error('Ошибка создания таблицы:', err.message);
-    }
-  );
-
-  const products = [
-    [
-      'Классические брюки',
-      'Одежда',
-      'Брюки',
-      2500,
-      5000,
-      '-50%',
-      'https://via.placeholder.com/200x250',
-      'Gucci',
-      'Хлопок',
-      'Черный',
-      4.5,
-      'S,M,L',
-    ],
-    // ... другие продукты
-  ];
-
-  const stmt = db.prepare(
-    `INSERT INTO products (name, category, subcategory, price, oldPrice, discount, image, brand, material, color, rating, sizes)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-  );
+  db.run(`CREATE TABLE IF NOT EXISTS products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    subcategory TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    oldPrice INTEGER DEFAULT 0,
+    discount TEXT DEFAULT '',
+    image TEXT NOT NULL,
+    brand TEXT,
+    material TEXT,
+    color TEXT,
+    rating REAL DEFAULT 0,
+    sizes TEXT,
+    country TEXT,
+    reviews INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
 
   db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
-    if (err) {
-      console.error('Ошибка проверки данных:', err.message);
-    } else if (row.count === 0) {
+    if (err) return console.error('Error checking products:', err);
+
+    if (row.count === 0) {
+      const products = [
+        {
+          name: 'Мужские классические брюки',
+          category: 'Одежда',
+          subcategory: 'Брюки',
+          price: 4500,
+          oldPrice: 6000,
+          discount: '25%',
+          image: 'https://via.placeholder.com/200x250',
+          brand: 'Gucci',
+          material: 'Хлопок',
+          color: 'Черный',
+          rating: 4.5,
+          sizes: 'S,M,L,XL',
+          country: 'Италия',
+          reviews: 12,
+        },
+        {
+          name: 'Спортивный костюм',
+          category: 'Спорт',
+          subcategory: 'Спортивные костюмы',
+          price: 7990,
+          oldPrice: 9990,
+          discount: '20%',
+          image: 'https://via.placeholder.com/200x250',
+          brand: 'Nike',
+          material: 'Полиэстер',
+          color: 'Синий',
+          rating: 4.8,
+          sizes: 'M,L,XL',
+          country: 'Китай',
+          reviews: 8,
+        },
+      ];
+
+      const stmt = db.prepare(`INSERT INTO products (
+        name, category, subcategory, price, oldPrice, discount, 
+        image, brand, material, color, rating, sizes, country, reviews
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+
       products.forEach((product) => {
-        product[10] = parseFloat(product[10]) || null;
-        stmt.run(product, (err) => {
-          if (err) {
-            console.error('Ошибка вставки данных:', err.message);
-          }
-        });
+        stmt.run(
+          product.name,
+          product.category,
+          product.subcategory,
+          product.price,
+          product.oldPrice,
+          product.discount,
+          product.image,
+          product.brand,
+          product.material,
+          product.color,
+          product.rating,
+          product.sizes,
+          product.country,
+          product.reviews
+        );
       });
-      console.log('Таблица products заполнена данными');
-    } else {
-      console.log('Таблица products уже содержит данные');
+
+      stmt.finalize();
+      console.log('Added initial products');
     }
-    stmt.finalize();
   });
 });
 
-// Маршрут для получения всех продуктов
 app.get('/api/products', (req, res) => {
   const {
     category,
@@ -105,6 +117,8 @@ app.get('/api/products', (req, res) => {
     material,
     color,
     size,
+    country,
+    price,
     sortBy,
   } = req.query;
 
@@ -126,18 +140,27 @@ app.get('/api/products', (req, res) => {
   }
 
   if (brand) {
-    query += ` AND brand = ?`;
-    params.push(brand);
+    query += ` AND brand IN (${brand
+      .split(',')
+      .map(() => '?')
+      .join(',')})`;
+    params.push(...brand.split(','));
   }
 
   if (material) {
-    query += ` AND material = ?`;
-    params.push(material);
+    query += ` AND material IN (${material
+      .split(',')
+      .map(() => '?')
+      .join(',')})`;
+    params.push(...material.split(','));
   }
 
   if (color) {
-    query += ` AND color = ?`;
-    params.push(color);
+    query += ` AND color IN (${color
+      .split(',')
+      .map(() => '?')
+      .join(',')})`;
+    params.push(...color.split(','));
   }
 
   if (size) {
@@ -145,41 +168,92 @@ app.get('/api/products', (req, res) => {
     params.push(`%${size}%`);
   }
 
+  if (country) {
+    query += ` AND country IN (${country
+      .split(',')
+      .map(() => '?')
+      .join(',')})`;
+    params.push(...country.split(','));
+  }
+
+  if (price) {
+    const priceFilters = price.split(',');
+    const priceConditions = priceFilters
+      .map((p) => {
+        const [min, max] = p.split('-');
+        if (min && max) {
+          params.push(parseInt(min), parseInt(max));
+          return '(price BETWEEN ? AND ?)';
+        }
+        if (min) {
+          params.push(parseInt(min));
+          return 'price >= ?';
+        }
+        if (max) {
+          params.push(parseInt(max));
+          return 'price <= ?';
+        }
+        return '';
+      })
+      .filter(Boolean);
+
+    if (priceConditions.length) {
+      query += ` AND (${priceConditions.join(' OR ')})`;
+    }
+  }
+
   if (sortBy) {
-    const validSortOptions = ['price', 'rating', 'discount'];
-    if (validSortOptions.includes(sortBy)) {
-      query += ` ORDER BY ${sortBy}`;
+    switch (sortBy) {
+      case 'Новинки':
+        query += ' ORDER BY created_at DESC';
+        break;
+      case 'Сначала дороже':
+        query += ' ORDER BY price DESC';
+        break;
+      case 'Сначала дешевле':
+        query += ' ORDER BY price ASC';
+        break;
+      case 'По величине скидки':
+        query += ' ORDER BY CAST(REPLACE(discount, "%", "") AS INTEGER) DESC';
+        break;
     }
   }
 
   db.all(query, params, (err, rows) => {
     if (err) {
-      console.error('Ошибка выполнения запроса:', err.message);
-      res.status(500).json({ error: 'Ошибка сервера' });
-    } else {
-      rows.forEach((row) => {
-        row.rating = parseFloat(row.rating) || null;
-      });
-      res.json(rows);
+      console.error('Database error:', err);
+      return res.status(500).json({ error: 'Database error' });
     }
+
+    const processed = rows.map((row) => ({
+      ...row,
+      rating: parseFloat(row.rating) || 0,
+      reviews: parseInt(row.reviews) || 0,
+      sizes: row.sizes ? row.sizes.split(',') : [],
+      discount: row.discount || null,
+    }));
+
+    res.json(processed);
   });
 });
 
 const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
 
 function loadPromoCodes() {
-  if (fs.existsSync(promoCodesFile)) {
-    const data = fs.readFileSync(promoCodesFile);
-    return JSON.parse(data);
+  try {
+    return fs.existsSync(promoCodesFile)
+      ? JSON.parse(fs.readFileSync(promoCodesFile))
+      : {};
+  } catch (e) {
+    return {};
   }
-  return {};
 }
 
 function savePromoCodes(promoCodes) {
   fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
 }
 
-const promoCodesDB = loadPromoCodes();
+const promoCodes = loadPromoCodes();
 
 function generatePromoCode() {
   return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
@@ -196,40 +270,36 @@ const transporter = nodemailer.createTransport({
 app.post('/subscribe', async (req, res) => {
   const { email } = req.body;
 
-  if (!email) {
-    return res.status(400).json({ message: 'E-mail обязателен!' });
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ message: 'Некорректный email' });
   }
 
-  if (promoCodesDB[email]) {
-    return res.status(200).json({
+  if (promoCodes[email]) {
+    return res.json({
       message: 'Вы уже получили промокод!',
-      promoCode: promoCodesDB[email],
+      promoCode: promoCodes[email],
     });
   }
 
   const promoCode = generatePromoCode();
-  promoCodesDB[email] = promoCode;
-  savePromoCodes(promoCodesDB);
-
-  const mailOptions = {
-    from: `Dominik Store <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Ваш промокод от Dominik Store!',
-    html: `
-      <h1>Спасибо за подписку!</h1>
-      <p>Ваш уникальный промокод: <strong>${promoCode}</strong>.</p>
-      <p>Примените его при оформлении заказа и получите скидку 10%!</p>
-    `,
-  };
+  promoCodes[email] = promoCode;
+  savePromoCodes(promoCodes);
 
   try {
-    await transporter.sendMail(mailOptions);
-    res.status(200).json({ message: 'Промокод отправлен на вашу почту!' });
+    await transporter.sendMail({
+      from: `Dominik Store <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: 'Ваш промокод от Dominik Store!',
+      html: `
+        <h1>Спасибо за подписку!</h1>
+        <p>Ваш промокод: <strong>${promoCode}</strong></p>
+        <p>Используйте его при оформлении заказа для получения скидки 10%!</p>
+      `,
+    });
+    res.json({ message: 'Промокод отправлен на вашу почту' });
   } catch (error) {
-    console.error('Ошибка отправки письма:', error.message);
-    res
-      .status(500)
-      .json({ message: 'Ошибка отправки письма. Попробуйте позже.' });
+    console.error('Ошибка отправки:', error);
+    res.status(500).json({ message: 'Ошибка отправки письма' });
   }
 });
 
@@ -238,5 +308,6 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Сервер запущен на http://localhost:${PORT}`);
+  console.log(`Сервер запущен на порту ${PORT}`);
+  console.log(`Режим работы: ${process.env.NODE_ENV || 'development'}`);
 });
