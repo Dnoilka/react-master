@@ -108,6 +108,16 @@ const ShopContent = () => {
     isInitialLoad: true,
   });
 
+  const [dropdownVisibility, setDropdownVisibility] = useState({
+    material: false,
+    color: false,
+    size: false,
+    brand: false,
+    country: false,
+    price: false,
+    sort: false,
+  });
+
   const buildQueryParams = useMemo(() => {
     const params = new URLSearchParams();
 
@@ -207,14 +217,17 @@ const ShopContent = () => {
       ...prev,
       filters: { ...prev.filters, [filterType]: values },
     }));
+    setDropdownVisibility((prev) => ({ ...prev, [filterType]: false }));
   };
 
   const handlePriceChange = (values) => {
     setState((prev) => ({ ...prev, priceRange: values }));
+    setDropdownVisibility((prev) => ({ ...prev, price: false }));
   };
 
   const handleSortChange = (value) => {
     setState((prev) => ({ ...prev, sort: value }));
+    setDropdownVisibility((prev) => ({ ...prev, sort: false }));
   };
 
   const clearFilters = () => {
@@ -376,20 +389,30 @@ const ShopContent = () => {
                 items: filterOptions.sort.map((item) => ({
                   key: item,
                   label: (
-                    <Radio
-                      checked={state.sort === item}
-                      onChange={() => handleSortChange(item)}
-                      style={{ color: textColor }}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '4px 0',
+                        cursor: 'pointer',
+                      }}
+                      onClick={() => handleSortChange(item)}
                     >
-                      {item}
-                    </Radio>
+                      <Radio checked={state.sort === item} />
+                      <span style={{ marginLeft: 8 }}>{item}</span>
+                    </div>
                   ),
                 })),
               }}
               trigger={['click']}
+              open={dropdownVisibility.sort}
+              onOpenChange={(open) =>
+                setDropdownVisibility((prev) => ({ ...prev, sort: open }))
+              }
             >
               <Button style={{ minWidth: 120 }}>
                 Сортировка <DownOutlined />
+                {state.sort && `: ${state.sort}`}
               </Button>
             </Dropdown>
 
@@ -397,57 +420,121 @@ const ShopContent = () => {
               <Dropdown
                 key={key}
                 menu={{
-                  items: values.map((value) => ({
-                    key: value,
-                    label: (
-                      <Checkbox
-                        checked={state.filters[key].includes(value)}
-                        onChange={(e) => {
-                          const newValues = e.target.checked
-                            ? [...state.filters[key], value]
-                            : state.filters[key].filter((v) => v !== value);
-                          handleFilterChange(key, newValues);
-                        }}
-                        style={{ color: textColor }}
-                      >
-                        {value}
-                      </Checkbox>
-                    ),
-                  })),
-                  style: { maxHeight: 300, overflowY: 'auto' },
+                  items: [
+                    ...values.map((value) => ({
+                      key: value,
+                      label: (
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '4px 0',
+                            cursor: 'pointer',
+                          }}
+                          onClick={() => {
+                            const newValues = state.filters[key].includes(value)
+                              ? state.filters[key].filter((v) => v !== value)
+                              : [...state.filters[key], value];
+                            handleFilterChange(key, newValues);
+                          }}
+                        >
+                          <Checkbox
+                            checked={state.filters[key].includes(value)}
+                          />
+                          <span style={{ marginLeft: 8 }}>{value}</span>
+                        </div>
+                      ),
+                    })),
+                    { type: 'divider' },
+                    {
+                      key: 'clear',
+                      label: (
+                        <div style={{ padding: '4px 8px', textAlign: 'right' }}>
+                          <Button
+                            type="link"
+                            size="small"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleFilterChange(key, []);
+                            }}
+                            disabled={state.filters[key].length === 0}
+                          >
+                            Очистить
+                          </Button>
+                        </div>
+                      ),
+                    },
+                  ],
                 }}
                 trigger={['click']}
+                open={dropdownVisibility[key]}
+                onOpenChange={(open) =>
+                  setDropdownVisibility((prev) => ({ ...prev, [key]: open }))
+                }
               >
                 <Button style={{ minWidth: 140 }}>
                   {filterLabels[key]} <DownOutlined />
+                  {state.filters[key].length > 0 &&
+                    ` (${state.filters[key].length})`}
                 </Button>
               </Dropdown>
             ))}
 
             <Dropdown
               menu={{
-                items: filterOptions.priceRanges.map((range) => ({
-                  key: range,
-                  label: (
-                    <Checkbox
-                      checked={state.priceRange.includes(range)}
-                      onChange={(e) => {
-                        const newValues = e.target.checked
-                          ? [...state.priceRange, range]
-                          : state.priceRange.filter((r) => r !== range);
-                        handlePriceChange(newValues);
-                      }}
-                      style={{ color: textColor }}
-                    >
-                      {range}
-                    </Checkbox>
-                  ),
-                })),
+                items: [
+                  ...filterOptions.priceRanges.map((range) => ({
+                    key: range,
+                    label: (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '4px 0',
+                          cursor: 'pointer',
+                        }}
+                        onClick={() => {
+                          const newValues = state.priceRange.includes(range)
+                            ? state.priceRange.filter((r) => r !== range)
+                            : [...state.priceRange, range];
+                          handlePriceChange(newValues);
+                        }}
+                      >
+                        <Checkbox checked={state.priceRange.includes(range)} />
+                        <span style={{ marginLeft: 8 }}>{range}</span>
+                      </div>
+                    ),
+                  })),
+                  { type: 'divider' },
+                  {
+                    key: 'clear',
+                    label: (
+                      <div style={{ padding: '4px 8px', textAlign: 'right' }}>
+                        <Button
+                          type="link"
+                          size="small"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            handlePriceChange([]);
+                          }}
+                          disabled={state.priceRange.length === 0}
+                        >
+                          Очистить
+                        </Button>
+                      </div>
+                    ),
+                  },
+                ],
               }}
               trigger={['click']}
+              open={dropdownVisibility.price}
+              onOpenChange={(open) =>
+                setDropdownVisibility((prev) => ({ ...prev, price: open }))
+              }
             >
               <Button style={{ minWidth: 120 }}>
                 {filterLabels.price} <DownOutlined />
+                {state.priceRange.length > 0 && ` (${state.priceRange.length})`}
               </Button>
             </Dropdown>
 
