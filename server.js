@@ -176,6 +176,19 @@ app.get('/api/products', (req, res) => {
     params.push(...country.split(','));
   }
 
+  if (req.query.search) {
+    query += ` AND name LIKE ?`;
+    params.push(`%${req.query.search}%`);
+  }
+
+  if (req.query.sortBy) {
+    switch (req.query.sortBy) {
+      case 'Новинки':
+        query += ' ORDER BY created_at DESC';
+        break;
+    }
+  }
+
   if (price) {
     const priceFilters = price.split(',');
     const priceConditions = priceFilters
