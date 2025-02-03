@@ -26,6 +26,7 @@ import {
 import { DownOutlined } from '@ant-design/icons';
 import { ThemeContext } from '../../Sider/ThemeContext';
 import { debounce } from 'lodash-es';
+import { useSearchParams } from 'react-router-dom';
 
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -85,6 +86,7 @@ const filterLabels = {
 
 const ShopContent = () => {
   const { theme } = useContext(ThemeContext);
+  const [searchParams, setSearchParams] = useSearchParams();
   const isDarkMode = theme === 'dark';
   const textColor = isDarkMode ? '#fff' : '#000';
   const backgroundColor = isDarkMode ? '#12172a' : '#f0f0f0';
@@ -108,15 +110,38 @@ const ShopContent = () => {
     isInitialLoad: true,
   });
 
-  const [dropdownVisibility, setDropdownVisibility] = useState({
-    material: false,
-    color: false,
-    size: false,
-    brand: false,
-    country: false,
-    price: false,
-    sort: false,
-  });
+  useEffect(() => {
+    const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
+    const discount = searchParams.get('discount') === 'true';
+    const sortBy = searchParams.get('sortBy');
+
+    setState((prev) => ({
+      ...prev,
+      selectedCategory: category || null,
+      selectedSubcategory: subcategory || null,
+      onlyWithDiscount: discount,
+      sort: sortBy || null,
+    }));
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = {};
+
+    if (state.selectedCategory) params.category = state.selectedCategory;
+    if (state.selectedSubcategory)
+      params.subcategory = state.selectedSubcategory;
+    if (state.onlyWithDiscount) params.discount = 'true';
+    if (state.sort) params.sortBy = state.sort;
+
+    setSearchParams(params);
+  }, [
+    state.selectedCategory,
+    state.selectedSubcategory,
+    state.onlyWithDiscount,
+    state.sort,
+    setSearchParams,
+  ]);
 
   const buildQueryParams = useMemo(() => {
     const params = new URLSearchParams();
@@ -445,10 +470,6 @@ const ShopContent = () => {
                 ],
               }}
               trigger={['click']}
-              open={dropdownVisibility.sort}
-              onOpenChange={(open) =>
-                setDropdownVisibility((prev) => ({ ...prev, sort: open }))
-              }
             >
               <Button style={{ minWidth: 240 }}>
                 {state.sort ? ` ${state.sort}` : ' Подобрано для вас'}
@@ -497,10 +518,6 @@ const ShopContent = () => {
                   ],
                 }}
                 trigger={['click']}
-                open={dropdownVisibility[key]}
-                onOpenChange={(open) =>
-                  setDropdownVisibility((prev) => ({ ...prev, [key]: open }))
-                }
               >
                 <Button style={{ minWidth: 160 }}>
                   {filterLabels[key]}
@@ -550,10 +567,6 @@ const ShopContent = () => {
                 ],
               }}
               trigger={['click']}
-              open={dropdownVisibility.price}
-              onOpenChange={(open) =>
-                setDropdownVisibility((prev) => ({ ...prev, price: open }))
-              }
             >
               <Button style={{ minWidth: 160 }}>
                 {filterLabels.price}

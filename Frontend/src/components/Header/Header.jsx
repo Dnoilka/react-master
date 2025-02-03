@@ -1,54 +1,45 @@
 import React, { useContext, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { Layout, Menu, Input, Button } from 'antd';
 import { SearchOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { ThemeContext } from '../Sider/ThemeContext';
-
-const { Search } = Input;
-
-const menuItems = [
-  { key: 'new', label: 'Новинки', sort: 'Новинки' },
-  { key: 'clothes', label: 'Одежда', category: 'Одежда' },
-  { key: 'shoes', label: 'Обувь', category: 'Обувь' },
-  { key: 'accessories', label: 'Аксессуары', category: 'Аксессуары' },
-  { key: 'sale', label: 'SALE%', discount: 'true' },
-];
+import { useNavigate } from 'react-router-dom';
 
 export default function Header() {
   const { theme } = useContext(ThemeContext);
-  const navigate = useNavigate();
-  const location = useLocation();
+  const [selectedKey, setSelectedKey] = useState('1');
   const [isCartHovered, setIsCartHovered] = useState(false);
+  const navigate = useNavigate();
 
-  const queryParams = new URLSearchParams(location.search);
-  const currentCategory = queryParams.get('category');
-  const currentSort = queryParams.get('sort');
-  const currentDiscount = queryParams.get('discount');
-
-  const handleMenuClick = (item) => {
+  const handleMenuClick = (e) => {
+    const item = e.key;
     const params = new URLSearchParams();
 
-    if (item.key === 'sale') {
-      params.set('discount', 'true');
-    } else if (item.sort) {
-      params.set('sort', item.sort);
-    } else if (item.category) {
-      params.set('category', item.category);
+    switch (item) {
+      case 'Новинки':
+        params.set('sortBy', 'Новинки');
+        break;
+      case 'Одежда':
+        params.set('category', 'Одежда');
+        break;
+      case 'Обувь':
+        params.set('category', 'Обувь');
+        break;
+      case 'Аксессуары':
+        params.set('category', 'Аксессуары');
+        break;
+      case 'SALE%':
+        params.set('discount', 'true');
+        break;
+      default:
+        break;
     }
 
     navigate(`/shop?${params.toString()}`);
+    setSelectedKey(item);
   };
 
-  const onSearch = (value) => {
-    navigate(`/shop?search=${encodeURIComponent(value)}`);
-  };
-
-  const getSelectedKeys = () => {
-    if (currentDiscount) return ['sale'];
-    if (currentSort) return [currentSort];
-    if (currentCategory) return [currentCategory];
-    return [];
-  };
+  const { Search } = Input;
+  const onSearch = (value, _e, info) => console.log(info?.source, value);
 
   return (
     <Layout.Header
@@ -56,9 +47,6 @@ export default function Header() {
         backgroundColor: theme === 'dark' ? '#001529' : '#fff',
         color: theme === 'dark' ? '#fff' : '#000',
         padding: '0px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
       }}
     >
       <div
@@ -75,40 +63,44 @@ export default function Header() {
           style={{
             fontFamily: 'Miss Stanfort',
             fontSize: '50px',
-            cursor: 'pointer',
+            color: theme === 'dark' ? '#fff' : '#000',
           }}
-          onClick={() => navigate('/')}
         >
           Domunuk
         </div>
 
         <Menu
           mode="horizontal"
-          selectedKeys={getSelectedKeys()}
+          selectedKeys={[selectedKey]}
+          className="navbar"
           style={{
             flex: 1,
             justifyContent: 'center',
             borderBottom: 'none',
-            backgroundColor: 'transparent',
+            backgroundColor: theme === 'dark' ? '#001529' : '#fff',
           }}
           onClick={handleMenuClick}
         >
-          {menuItems.map((item) => (
+          {['Новинки', 'Одежда', 'Обувь', 'Аксессуары', 'SALE%'].map((item) => (
             <Menu.Item
-              key={item.key}
+              key={item}
               style={{
                 fontSize: '16px',
                 fontWeight: 'bold',
                 borderBottom: '2px solid transparent',
                 color:
-                  item.key === 'sale'
+                  item === 'SALE%'
                     ? 'red'
-                    : getSelectedKeys().includes(item.key)
-                    ? '#1890ff'
-                    : 'inherit',
+                    : selectedKey === item
+                    ? theme === 'dark'
+                      ? '#1890ff'
+                      : '#1890ff'
+                    : theme === 'dark'
+                    ? '#fff'
+                    : '#000',
               }}
             >
-              {item.label}
+              {item}
             </Menu.Item>
           ))}
         </Menu>
@@ -119,7 +111,11 @@ export default function Header() {
         >
           <Search
             placeholder="Поиск"
-            style={{ width: '350px' }}
+            style={{
+              width: '350px',
+              padding: '5px 15px',
+              color: theme === 'dark' ? '#fff' : '#000',
+            }}
             onSearch={onSearch}
             enterButton
           />
@@ -127,6 +123,7 @@ export default function Header() {
           <Button
             type="link"
             icon={<ShoppingCartOutlined />}
+            className="cart-btn"
             onMouseEnter={() => setIsCartHovered(true)}
             onMouseLeave={() => setIsCartHovered(false)}
             style={{
@@ -136,8 +133,8 @@ export default function Header() {
                 : theme === 'dark'
                 ? '#fff'
                 : '#000',
+              transition: 'color 0.3s',
             }}
-            onClick={() => navigate('/')} //Позже сделать редирект на страницу корзины
           >
             Корзина
           </Button>
