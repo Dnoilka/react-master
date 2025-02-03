@@ -712,7 +712,10 @@ const ShopContent = () => {
                           </Text>
                         )}
                         {product.reviews > 0 && (
-                          <Text type="secondary" style={{ fontSize: 12 }}>
+                          <Text
+                            type="secondary"
+                            style={{ fontSize: 12, color: textColor }}
+                          >
                             ({product.reviews} отзывов)
                           </Text>
                         )}

@@ -16,16 +16,16 @@ export default function Header() {
 
     switch (item) {
       case 'Новинки':
-        params.set('sortBy', 'Новинки');
+        params.set('sortBy', encodeURIComponent('Новинки'));
         break;
       case 'Одежда':
-        params.set('category', 'Одежда');
+        params.set('category', encodeURIComponent('Одежда'));
         break;
       case 'Обувь':
-        params.set('category', 'Обувь');
+        params.set('category', encodeURIComponent('Обувь'));
         break;
       case 'Аксессуары':
-        params.set('category', 'Аксессуары');
+        params.set('category', encodeURIComponent('Аксессуары'));
         break;
       case 'SALE%':
         params.set('discount', 'true');
@@ -64,7 +64,9 @@ export default function Header() {
             fontFamily: 'Miss Stanfort',
             fontSize: '50px',
             color: theme === 'dark' ? '#fff' : '#000',
+            cursor: 'pointer',
           }}
+          onClick={() => navigate('/')}
         >
           Domunuk
         </div>
