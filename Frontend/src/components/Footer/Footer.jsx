@@ -29,7 +29,6 @@ export default function CustomFooter() {
 
     try {
       const response = await fetch('http://localhost/subscribe', {
-        // Обновил путь
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,10 +38,8 @@ export default function CustomFooter() {
       const data = await response.json();
 
       if (data.message === 'Вы уже получили промокод!') {
-        // Если email уже зарегистрирован
         message.info('Вы уже получили свой промокод!');
       } else {
-        // Если email не найден, подписка успешна
         await subscribeEmail(email);
       }
     } catch (error) {
@@ -53,7 +50,6 @@ export default function CustomFooter() {
   const subscribeEmail = async (email) => {
     try {
       const response = await fetch('http://localhost/subscribe', {
-        // Используем полный путь
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
