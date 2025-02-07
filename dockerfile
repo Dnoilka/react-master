@@ -40,6 +40,12 @@ COPY promoCodes.json ./
 COPY start.sh ./
 RUN chmod +x start.sh
 
+COPY nginx.conf /etc/nginx/nginx.conf
+COPY database.sqlite ./
+COPY promoCodes.json ./
+COPY start.sh ./
+RUN chmod +x start.sh
+
 # Проверка работоспособности
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:80 || exit 1
