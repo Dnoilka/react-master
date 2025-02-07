@@ -204,7 +204,7 @@ const ShopContent = () => {
       }
       try {
         const response = await fetch(
-          `http://localhost:80/api/products?${params}`
+          `http://localhost:3000/api/products?${params}`
         );
 
         if (!response.ok) {

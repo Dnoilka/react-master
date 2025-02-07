@@ -268,7 +268,7 @@ export default function CustomFooter() {
             <img
               src="assets/images/download.svg"
               alt="Mastercard"
-              height="30"
+              height="50"
               style={{ marginRight: '15px' }}
             />
             <img src="/assets/images/мир.svg" alt="MIR" height="20" />
