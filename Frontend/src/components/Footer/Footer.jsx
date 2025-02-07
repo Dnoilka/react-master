@@ -94,7 +94,6 @@ export default function CustomFooter() {
               padding: '20px',
               borderRadius: '8px',
               textAlign: 'center',
-              backgroundColor: isDarkTheme ? '#000b14' : '#f5f5f5',
             }}
           >
             <Title level={4} style={baseTextStyle}>
