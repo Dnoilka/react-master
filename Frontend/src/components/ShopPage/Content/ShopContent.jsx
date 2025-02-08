@@ -118,21 +118,22 @@ const ShopContent = () => {
 
     setState((prev) => ({
       ...prev,
-      selectedCategory: category || null,
-      selectedSubcategory: subcategory || null,
+      selectedCategory: category ? decodeURIComponent(category) : null,
+      selectedSubcategory: subcategory ? decodeURIComponent(subcategory) : null,
       onlyWithDiscount: discount,
-      sort: sortBy || null,
+      sort: sortBy ? decodeURIComponent(sortBy) : null,
     }));
   }, [searchParams]);
 
   useEffect(() => {
     const params = {};
 
-    if (state.selectedCategory) params.category = state.selectedCategory;
+    if (state.selectedCategory)
+      params.category = encodeURIComponent(state.selectedCategory);
     if (state.selectedSubcategory)
-      params.subcategory = state.selectedSubcategory;
+      params.subcategory = encodeURIComponent(state.selectedSubcategory);
     if (state.onlyWithDiscount) params.discount = 'true';
-    if (state.sort) params.sortBy = state.sort;
+    if (state.sort) params.sortBy = encodeURIComponent(state.sort);
 
     setSearchParams(params);
   }, [
@@ -203,8 +204,9 @@ const ShopContent = () => {
         setState((prev) => ({ ...prev, loading: true, error: null }));
       }
       try {
+        const encodedParams = encodeURI(params);
         const response = await fetch(
-          `http://localhost:3000/api/products?${params}`
+          `http://localhost:3000/api/products?${encodedParams}`
         );
 
         if (!response.ok) {
@@ -222,7 +224,7 @@ const ShopContent = () => {
       } catch (err) {
         setState((prev) => ({
           ...prev,
-          error: err.message || 'Не удалось загрузить товары',
+          error: `Ошибка загрузки: ${err.message}. Попробуйте обновить страницу`,
           products: [],
           loading: false,
           isInitialLoad: false,
@@ -712,10 +714,7 @@ const ShopContent = () => {
                           </Text>
                         )}
                         {product.reviews > 0 && (
-                          <Text
-                            type="secondary"
-                            style={{ fontSize: 12, color: textColor }}
-                          >
+                          <Text type="secondary" style={{ fontSize: 12 }}>
                             ({product.reviews} отзывов)
                           </Text>
                         )}

@@ -14,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'Frontend', 'dist')));
+app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 
 const dbFilePath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbFilePath);
@@ -127,12 +127,12 @@ app.get('/api/products', (req, res) => {
 
   if (category) {
     query += ` AND category = ?`;
-    params.push(category);
+    params.push(decodeURIComponent(category));
   }
 
   if (subcategory) {
     query += ` AND subcategory = ?`;
-    params.push(subcategory);
+    params.push(decodeURIComponent(subcategory));
   }
 
   if (discount === 'true') {
@@ -144,7 +144,7 @@ app.get('/api/products', (req, res) => {
       .split(',')
       .map(() => '?')
       .join(',')})`;
-    params.push(...brand.split(','));
+    params.push(...brand.split(',').map(decodeURIComponent));
   }
 
   if (material) {
@@ -152,7 +152,7 @@ app.get('/api/products', (req, res) => {
       .split(',')
       .map(() => '?')
       .join(',')})`;
-    params.push(...material.split(','));
+    params.push(...material.split(',').map(decodeURIComponent));
   }
 
   if (color) {
@@ -160,7 +160,7 @@ app.get('/api/products', (req, res) => {
       .split(',')
       .map(() => '?')
       .join(',')})`;
-    params.push(...color.split(','));
+    params.push(...color.split(',').map(decodeURIComponent));
   }
 
   if (size) {
@@ -173,20 +173,7 @@ app.get('/api/products', (req, res) => {
       .split(',')
       .map(() => '?')
       .join(',')})`;
-    params.push(...country.split(','));
-  }
-
-  if (req.query.search) {
-    query += ` AND name LIKE ?`;
-    params.push(`%${req.query.search}%`);
-  }
-
-  if (req.query.sortBy) {
-    switch (req.query.sortBy) {
-      case 'Новинки':
-        query += ' ORDER BY created_at DESC';
-        break;
-    }
+    params.push(...country.split(',').map(decodeURIComponent));
   }
 
   if (price) {
@@ -216,9 +203,13 @@ app.get('/api/products', (req, res) => {
   }
 
   if (sortBy) {
-    switch (sortBy) {
+    const decodedSortBy = decodeURIComponent(sortBy);
+    switch (decodedSortBy) {
       case 'Новинки':
-        query += ' ORDER BY created_at DESC';
+        query += ` ORDER BY 
+          CASE WHEN created_at IS NOT NULL THEN created_at 
+               ELSE '1970-01-01' 
+          END DESC`;
         break;
       case 'Сначала дороже':
         query += ' ORDER BY price DESC';
@@ -227,8 +218,14 @@ app.get('/api/products', (req, res) => {
         query += ' ORDER BY price ASC';
         break;
       case 'По величине скидки':
-        query += ' ORDER BY CAST(REPLACE(discount, "%", "") AS INTEGER) DESC';
+        query += ` ORDER BY 
+          CASE WHEN discount != '' 
+               THEN CAST(REPLACE(discount, "%", "") AS INTEGER) 
+               ELSE 0 
+          END DESC`;
         break;
+      default:
+        query += ' ORDER BY created_at DESC';
     }
   }
 
