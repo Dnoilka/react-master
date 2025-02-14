@@ -1,208 +1,192 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { Layout, Menu, Input, Button, Badge, Dropdown, Spin } from 'antd';
-import {
-  SearchOutlined,
-  ShoppingCartOutlined,
-  UserOutlined,
-  DownOutlined,
-} from '@ant-design/icons';
+import React, { useContext, useState } from 'react';
+import { Layout, Menu, Input, Button, Badge } from 'antd';
+import { SearchOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 import { ThemeContext } from '../Sider/ThemeContext';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { CartContext } from './CartContext';
-import api from './api';
+import { useNavigate } from 'react-router-dom';
+import LogoBlack from '../../../assets/images/LogoBlack.png';
+import LogoWhite from '../../../assets/images/LogoWhite.png';
 
-const { Header: AntHeader } = Layout;
-const { Search } = Input;
-
-const Header = () => {
+export default function Header() {
   const { theme } = useContext(ThemeContext);
-  const { cartCount, cartItems } = useContext(CartContext);
-  const [selectedKeys, setSelectedKeys] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [selectedKey, setSelectedKey] = useState('1');
+  const [isCartHovered, setIsCartHovered] = useState(false);
+  const [cartItemsCount] = useState(3);
   const navigate = useNavigate();
-  const location = useLocation();
 
-  // Получение категорий из API
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get('/categories');
-        setCategories(response.data);
-      } catch (error) {
-        console.error('Error fetching categories:', error);
-      } finally {
-        setLoading(false);
-      }
+  const handleMenuClick = (e) => {
+    const item = e.key;
+    const params = new URLSearchParams();
+
+    const mappings = {
+      Новинки: { sortBy: 'Новинки' },
+      Одежда: { category: 'Одежда' },
+      Обувь: { category: 'Обувь' },
+      Аксессуары: { category: 'Аксессуары' },
+      'SALE%': { discount: 'true' },
     };
-    fetchCategories();
-  }, []);
 
-  // Обновление выбранных ключей меню при изменении местоположения
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const category = params.get('category');
-    const sortBy = params.get('sortBy');
-
-    if (category) {
-      setSelectedKeys([category]);
-    } else if (sortBy) {
-      setSelectedKeys([sortBy]);
-    } else {
-      setSelectedKeys([]);
+    if (mappings[item]) {
+      Object.entries(mappings[item]).forEach(([key, value]) =>
+        params.set(key, encodeURIComponent(value))
+      );
     }
-  }, [location]);
 
-  // Обработчик поиска
-  const handleSearch = (value) => {
-    navigate(`/shop?search=${encodeURIComponent(value)}`);
-    setSearchQuery('');
+    navigate(`/shop?${params.toString()}`);
+    setSelectedKey(item);
   };
 
-  // Меню категорий
-  const categoryMenu = (
-    <Menu>
-      {categories.map((category) => (
-        <Menu.Item
-          key={category.id}
-          onClick={() => navigate(`/shop?category=${category.slug}`)}
-        >
-          {category.name}
-        </Menu.Item>
-      ))}
-    </Menu>
-  );
+  const { Search } = Input;
+  const onSearch = (value) =>
+    navigate(`/shop?search=${encodeURIComponent(value)}`);
 
   return (
-    <AntHeader
+    <Layout.Header
       style={{
         position: 'sticky',
         top: 0,
         zIndex: 1000,
-        backgroundColor: theme === 'dark' ? '#1a1a1a' : '#ffffff',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+        backgroundColor: theme === 'dark' ? '#001529' : '#ffffff',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
         padding: '0 24px',
+        height: 80,
+        display: 'flex',
+        alignItems: 'center',
       }}
     >
       <div
         style={{
+          maxWidth: 1440,
+          width: '100%',
+          margin: '0 auto',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          height: '100%',
         }}
       >
-        {/* Логотип */}
         <div
           style={{
-            fontSize: '50px',
-            fontFamily: 'Miss Stanfort',
-            color: theme === 'dark' ? '#fff' : '#000',
             cursor: 'pointer',
+            transition: 'transform 0.3s ease',
+            flexShrink: 0,
+            height: '80px',
           }}
           onClick={() => navigate('/')}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.transform = 'scale(1.05)')
+          }
+          onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
         >
-          Domunuk
-        </div>
-
-        <div style={{ flex: 1, margin: '0 48px' }}>
-          <Menu
-            mode="horizontal"
-            selectedKeys={selectedKeys}
+          <img
+            src={theme === 'dark' ? LogoWhite : LogoBlack}
+            alt="Senator Logo"
             style={{
-              backgroundColor: 'transparent',
-              borderBottom: 'none',
-              justifyContent: 'center',
+              height: '100%',
+              width: 'auto',
+              objectFit: 'contain',
             }}
-          >
-            <Menu.Item
-              key="new"
-              onClick={() => navigate('/shop?sort=new')}
-              style={{ fontWeight: 600 }}
-            >
-              Новинки
-            </Menu.Item>
-
-            <Dropdown overlay={categoryMenu} trigger={['hover']}>
-              <Menu.Item key="categories" style={{ fontWeight: 600 }}>
-                Категории <DownOutlined />
-              </Menu.Item>
-            </Dropdown>
-
-            <Menu.Item
-              key="sale"
-              onClick={() => navigate('/shop?sale=true')}
-              style={{ color: '#ff4d4f', fontWeight: 600 }}
-            >
-              SALE
-            </Menu.Item>
-          </Menu>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-          <Search
-            placeholder="Поиск товаров..."
-            enterButton={<SearchOutlined />}
-            size="large"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onSearch={handleSearch}
-            style={{ maxWidth: '400px' }}
           />
-
-          <Badge
-            count={cartCount}
-            size="small"
-            offset={[-10, 10]}
-            style={{
-              backgroundColor: '#1890ff',
-              boxShadow: `0 0 0 2px ${theme === 'dark' ? '#1a1a1a' : '#fff'}`,
-            }}
-          >
-            <Button
-              type="text"
-              icon={<ShoppingCartOutlined style={{ fontSize: '20px' }} />}
-              onClick={() => navigate('/cart')}
-              style={{
-                position: 'relative',
-                color: theme === 'dark' ? '#fff' : '#000',
-              }}
-            />
-          </Badge>
         </div>
-      </div>
 
-      {!loading && (
+        <Menu
+          mode="horizontal"
+          selectedKeys={[selectedKey]}
+          style={{
+            flex: 1,
+            border: 'none',
+            background: 'transparent',
+            minWidth: 600,
+            justifyContent: 'center',
+            margin: '0 32px',
+            fontSize: '1rem',
+            fontWeight: 500,
+          }}
+          onClick={handleMenuClick}
+          theme={theme}
+        >
+          {['Новинки', 'Одежда', 'Обувь', 'Аксессуары', 'SALE%'].map((item) => (
+            <Menu.Item
+              key={item}
+              style={{
+                height: 80,
+                display: 'flex',
+                alignItems: 'center',
+                borderBottom: '3px solid transparent',
+                margin: '0 8px',
+                color:
+                  item === 'SALE%'
+                    ? '#e74c3c'
+                    : theme === 'dark'
+                    ? 'rgba(255,255,255,0.85)'
+                    : '#2d3436',
+                transition: 'all 0.3s ease',
+                ...(selectedKey === item && {
+                  borderBottomColor: theme === 'dark' ? '#1890ff' : '#2d3436',
+                  color: theme === 'dark' ? '#1890ff' : '#2d3436',
+                }),
+              }}
+            >
+              {item}
+            </Menu.Item>
+          ))}
+        </Menu>
+
         <div
           style={{
             display: 'flex',
-            justifyContent: 'center',
-            gap: '24px',
-            marginTop: '12px',
-            paddingBottom: '12px',
+            alignItems: 'center',
+            gap: 24,
+            flexShrink: 0,
           }}
         >
-          {categories.slice(0, 5).map((category) => (
+          <Search
+            placeholder="Поиск товаров..."
+            enterButton={
+              <Button
+                type="primary"
+                style={{
+                  backgroundColor: theme === 'dark' ? '#1890ff' : '#2d3436',
+                  borderColor: theme === 'dark' ? '#1890ff' : '#2d3436',
+                }}
+              >
+                <SearchOutlined />
+              </Button>
+            }
+            size="large"
+            onSearch={onSearch}
+            style={{
+              maxWidth: 400,
+              borderRadius: 5,
+              overflow: 'hidden',
+            }}
+            allowClear
+          />
+
+          <Badge count={cartItemsCount} offset={[-8, 8]} color="#e74c3c">
             <Button
-              key={category.id}
-              type="link"
-              onClick={() => navigate(`/shop?category=${category.slug}`)}
+              type="text"
+              icon={<ShoppingCartOutlined style={{ fontSize: 24 }} />}
               style={{
-                color: theme === 'dark' ? '#fff' : '#000',
-                fontWeight: 500,
+                height: 48,
+                display: 'flex',
+                alignItems: 'center',
+                color: isCartHovered
+                  ? theme === 'dark'
+                    ? '#40a9ff'
+                    : '#1890ff'
+                  : theme === 'dark'
+                  ? '#ffffff'
+                  : '#2d3436',
+                transition: 'all 0.3s ease',
               }}
+              onMouseEnter={() => setIsCartHovered(true)}
+              onMouseLeave={() => setIsCartHovered(false)}
+              onClick={() => navigate('/cart')}
             >
-              {category.name}
+              <span style={{ marginLeft: 8 }}>Корзина</span>
             </Button>
-          ))}
+          </Badge>
         </div>
-      )}
-
-      {loading && <Spin style={{ display: 'block', margin: '12px auto' }} />}
-    </AntHeader>
+      </div>
+    </Layout.Header>
   );
-};
-
-export default Header;
+}

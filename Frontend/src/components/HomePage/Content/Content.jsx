@@ -138,7 +138,7 @@ const ContentComponent = () => {
               top: 0,
               left: 0,
               width: '100%',
-              height: '100%',
+              height: '90%',
               background:
                 'repeating-linear-gradient(45deg, transparent, transparent 20px, #a87c53 20px, #a87c53 40px)',
               zIndex: 0,

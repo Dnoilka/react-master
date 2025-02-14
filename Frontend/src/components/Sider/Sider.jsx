@@ -8,69 +8,65 @@ import {
   HomeOutlined,
   ShoppingOutlined,
   ContactsOutlined,
+  UserOutlined,
+  LockOutlined,
 } from '@ant-design/icons';
-import { Menu, Layout, Button, Modal, Input, Form } from 'antd';
+import { Menu, Layout, Button, Modal, Input, Form, Alert } from 'antd';
 import { ThemeContext } from './ThemeContext';
 import { Link } from 'react-router-dom';
 
 const SiderComponent = () => {
-  const [collapsed, setCollapsed] = useState(() => {
-    return localStorage.getItem('siderCollapsed') === 'true';
-  });
-
+  const [collapsed, setCollapsed] = useState(
+    localStorage.getItem('siderCollapsed') === 'true'
+  );
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [isRegisterModalVisible, setIsRegisterModalVisible] = useState(false);
-
   const { theme, toggleTheme } = useContext(ThemeContext);
+  const [form] = Form.useForm();
 
   useEffect(() => {
     localStorage.setItem('siderCollapsed', collapsed);
   }, [collapsed]);
 
-  const toggleCollapsed = () => {
-    setCollapsed(!collapsed);
+  const handleMenuClick = (e) => {
+    if (e.key === 'login') setIsLoginModalVisible(true);
+    else if (e.key === 'theme') toggleTheme();
   };
 
-  const handleMenuClick = (e) => {
-    if (e.key === 'login') {
-      setIsLoginModalVisible(true);
-    } else if (e.key === 'theme') {
-      toggleTheme();
+  const handleAuthSubmit = async (values, isLogin) => {
+    try {
+      console.log(values);
+      isLogin
+        ? setIsLoginModalVisible(false)
+        : setIsRegisterModalVisible(false);
+      Modal.success({
+        title: isLogin ? 'Вход выполнен!' : 'Регистрация успешна!',
+        content: isLogin
+          ? 'Добро пожаловать!'
+          : 'Проверьте вашу почту для подтверждения аккаунта',
+      });
+    } catch (error) {
+      Modal.error({
+        title: 'Ошибка',
+        content: error.message,
+      });
     }
   };
 
-  const closeLoginModal = () => {
-    setIsLoginModalVisible(false);
-  };
-
-  const closeRegisterModal = () => {
-    setIsRegisterModalVisible(false);
-  };
-
-  const switchToRegister = () => {
-    closeLoginModal();
-    setIsRegisterModalVisible(true);
-  };
-
-  const switchToLogin = () => {
-    closeRegisterModal();
-    setIsLoginModalVisible(true);
-  };
-
-  const items = [
+  const menuItems = [
     {
       key: 'theme',
       label: (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
           <MoonOutlined />
-          <span>Сменить тему</span>
+          <span>{theme === 'dark' ? 'Светлая тема' : 'Тёмная тема'}</span>
         </div>
       ),
     },
     {
       key: 'login',
-      label: 'Войти',
-      icon: <MailOutlined />,
+      icon: <UserOutlined />,
+      label: 'Личный кабинет',
     },
     {
       key: 'sub1',
@@ -78,32 +74,38 @@ const SiderComponent = () => {
       icon: <AppstoreOutlined />,
       children: [
         {
-          key: '1',
-          label: (
-            <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-              <HomeOutlined />
-              <span style={{ marginLeft: '10px' }}>На главную</span>
-            </Link>
-          ),
-        },
-        {
-          key: '2',
-          label: (
-            <Link to="/Shop" style={{ display: 'flex', alignItems: 'center' }}>
-              <ShoppingOutlined />
-              <span style={{ marginLeft: '10px' }}>Магазин</span>
-            </Link>
-          ),
-        },
-        {
-          key: '3',
+          key: 'home',
           label: (
             <Link
-              to="/Contact"
-              style={{ display: 'flex', alignItems: 'center' }}
+              to="/"
+              style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+            >
+              <HomeOutlined />
+              <span>Главная</span>
+            </Link>
+          ),
+        },
+        {
+          key: 'shop',
+          label: (
+            <Link
+              to="/shop"
+              style={{ display: 'flex', alignItems: 'center', gap: 12 }}
+            >
+              <ShoppingOutlined />
+              <span>Магазин</span>
+            </Link>
+          ),
+        },
+        {
+          key: 'contact',
+          label: (
+            <Link
+              to="/contact"
+              style={{ display: 'flex', alignItems: 'center', gap: 12 }}
             >
               <ContactsOutlined />
-              <span style={{ marginLeft: '10px' }}>Контакты</span>
+              <span>Контакты</span>
             </Link>
           ),
         },
@@ -115,99 +117,144 @@ const SiderComponent = () => {
     <>
       <Layout.Sider
         collapsed={collapsed}
-        onCollapse={(collapsedState) => setCollapsed(collapsedState)}
-        width={250}
-        style={{ minHeight: '100vh' }}
+        collapsible
+        trigger={null}
+        width={280}
         theme={theme}
+        style={{
+          boxShadow: '2px 0 8px rgba(0,0,0,0.1)',
+          position: 'sticky',
+          top: 80,
+          left: 0,
+          height: 'calc(100vh - 80px)',
+          zIndex: 999,
+          overflow: 'auto',
+        }}
       >
         <div
           style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: '10px 0',
+            padding: 10,
+            borderBottom: `1px solid ${
+              theme === 'dark' ? '#303030' : '#f0f0f0'
+            }`,
           }}
         >
           <Button
-            type="primary"
-            onClick={toggleCollapsed}
+            type="default"
+            onClick={() => setCollapsed(!collapsed)}
+            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             style={{
-              width: collapsed ? '70px' : '95%',
-              height: '48px',
+              width: '100%',
+              height: 48,
+              borderRadius: 8,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              padding: 0,
+              gap: 16,
+              borderColor: theme === 'dark' ? '#3f3f3f' : '#000',
+              backgroundColor: '#fff',
             }}
-            icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
           />
         </div>
 
         <Menu
           theme={theme}
-          onClick={handleMenuClick}
-          style={{ width: '100%', border: 'none' }}
-          defaultSelectedKeys={['1']}
           mode="inline"
-          items={items}
+          items={menuItems}
+          onClick={handleMenuClick}
+          style={{
+            padding: '16px 0',
+            borderRight: 'none',
+          }}
         />
       </Layout.Sider>
 
       <Modal
-        title="Вход"
+        title={
+          <div
+            style={{
+              fontSize: 24,
+              fontWeight: 600,
+              color: theme === 'dark' ? '#ffffff' : '#2d3436',
+            }}
+          >
+            Вход в аккаунт
+          </div>
+        }
         visible={isLoginModalVisible}
-        onCancel={closeLoginModal}
+        onCancel={() => setIsLoginModalVisible(false)}
         footer={null}
-        width={800}
-        bodyStyle={{ padding: '20px' }}
+        centered
+        bodyStyle={{
+          padding: 32,
+          backgroundColor: theme === 'dark' ? '#141414' : '#ffffff',
+        }}
       >
         <Form
-          name="login"
-          initialValues={{ remember: true }}
-          onFinish={closeLoginModal}
+          form={form}
+          onFinish={(values) => handleAuthSubmit(values, true)}
           layout="vertical"
+          requiredMark={false}
         >
           <Form.Item
-            label="Email"
             name="email"
             rules={[
-              {
-                required: true,
-                message: 'Пожалуйста, введите ваш email!',
-              },
-              {
-                type: 'email',
-                message: 'Введите корректный email!',
-              },
+              { required: true, message: 'Пожалуйста, введите email' },
+              { type: 'email', message: 'Некорректный email' },
             ]}
           >
             <Input
+              prefix={<MailOutlined />}
               placeholder="Email"
-              style={{ height: '50px', fontSize: '16px' }}
+              size="large"
+              style={{ borderRadius: 8 }}
             />
           </Form.Item>
 
           <Form.Item
-            label="Пароль"
             name="password"
-            rules={[
-              {
-                required: true,
-                message: 'Пожалуйста, введите ваш пароль!',
-              },
-            ]}
+            rules={[{ required: true, message: 'Пожалуйста, введите пароль' }]}
           >
             <Input.Password
+              prefix={<LockOutlined />}
               placeholder="Пароль"
-              style={{ height: '50px', fontSize: '16px' }}
+              size="large"
+              style={{ borderRadius: 8 }}
             />
           </Form.Item>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button type="primary" size="large" htmlType="submit">
-              Войти
-            </Button>
-            <Button type="link" onClick={switchToRegister}>
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            size="large"
+            style={{
+              height: 48,
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: 500,
+              marginTop: 24,
+            }}
+          >
+            Войти
+          </Button>
+
+          <div
+            style={{
+              marginTop: 16,
+              textAlign: 'center',
+              color: theme === 'dark' ? '#ffffff' : '#2d3436',
+            }}
+          >
+            Нет аккаунта?{' '}
+            <Button
+              type="link"
+              onClick={() => {
+                setIsLoginModalVisible(false);
+                setIsRegisterModalVisible(true);
+              }}
+              style={{ padding: 0 }}
+            >
               Зарегистрироваться
             </Button>
           </div>
@@ -215,79 +262,93 @@ const SiderComponent = () => {
       </Modal>
 
       <Modal
-        title="Регистрация"
+        title={
+          <div
+            style={{
+              fontSize: 24,
+              fontWeight: 600,
+              color: theme === 'dark' ? '#ffffff' : '#2d3436',
+            }}
+          >
+            Регистрация
+          </div>
+        }
         visible={isRegisterModalVisible}
-        onCancel={closeRegisterModal}
+        onCancel={() => setIsRegisterModalVisible(false)}
         footer={null}
-        width={800}
-        bodyStyle={{ padding: '20px' }}
+        centered
+        bodyStyle={{
+          padding: 32,
+          backgroundColor: theme === 'dark' ? '#141414' : '#ffffff',
+        }}
       >
         <Form
-          name="register"
-          initialValues={{ remember: true }}
-          onFinish={closeRegisterModal}
+          form={form}
+          onFinish={(values) => handleAuthSubmit(values, false)}
           layout="vertical"
+          requiredMark={false}
         >
           <Form.Item
-            label="Имя"
             name="name"
-            rules={[
-              {
-                required: true,
-                message: 'Пожалуйста, введите ваше имя!',
-              },
-            ]}
+            rules={[{ required: true, message: 'Пожалуйста, введите имя' }]}
           >
             <Input
+              prefix={<UserOutlined />}
               placeholder="Имя"
-              style={{ height: '50px', fontSize: '16px' }}
+              size="large"
+              style={{ borderRadius: 8 }}
             />
           </Form.Item>
 
           <Form.Item
-            label="Email"
             name="email"
             rules={[
-              {
-                required: true,
-                message: 'Пожалуйста, введите ваш email!',
-              },
-              {
-                type: 'email',
-                message: 'Введите корректный email!',
-              },
+              { required: true, message: 'Пожалуйста, введите email' },
+              { type: 'email', message: 'Некорректный email' },
             ]}
           >
             <Input
+              prefix={<MailOutlined />}
               placeholder="Email"
-              style={{ height: '50px', fontSize: '16px' }}
+              size="large"
+              style={{ borderRadius: 8 }}
             />
           </Form.Item>
 
           <Form.Item
-            label="Пароль"
             name="password"
-            rules={[
-              {
-                required: true,
-                message: 'Пожалуйста, введите ваш пароль!',
-              },
-            ]}
+            rules={[{ required: true, message: 'Пожалуйста, введите пароль' }]}
           >
             <Input.Password
+              prefix={<LockOutlined />}
               placeholder="Пароль"
-              style={{ height: '50px', fontSize: '16px' }}
+              size="large"
+              style={{ borderRadius: 8 }}
             />
           </Form.Item>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <Button type="primary" size="large" htmlType="submit">
-              Зарегистрироваться
-            </Button>
-            <Button type="link" onClick={switchToLogin}>
-              Уже есть аккаунт? Войти
-            </Button>
-          </div>
+          <Alert
+            message="Пароль должен содержать:"
+            description="Минимум 8 символов, заглавные буквы и цифры"
+            type="info"
+            showIcon
+            style={{ marginBottom: 24, borderRadius: 8 }}
+          />
+
+          <Button
+            type="primary"
+            htmlType="submit"
+            block
+            size="large"
+            style={{
+              height: 48,
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: 500,
+            }}
+          >
+            Зарегистрироваться
+          </Button>
         </Form>
       </Modal>
     </>
