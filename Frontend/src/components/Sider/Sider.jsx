@@ -129,6 +129,7 @@ const SiderComponent = () => {
           height: 'calc(100vh - 80px)',
           zIndex: 999,
           overflow: 'auto',
+          userSelect: 'none',
         }}
       >
         <div
@@ -349,6 +350,25 @@ const SiderComponent = () => {
           >
             Зарегистрироваться
           </Button>
+          <div
+            style={{
+              marginTop: 16,
+              textAlign: 'center',
+              color: theme === 'dark' ? '#ffffff' : '#2d3436',
+            }}
+          >
+            Уже есть аккаунт?{' '}
+            <Button
+              type="link"
+              onClick={() => {
+                setIsLoginModalVisible(true);
+                setIsRegisterModalVisible(false);
+              }}
+              style={{ padding: 0 }}
+            >
+              Войти
+            </Button>
+          </div>
         </Form>
       </Modal>
     </>

@@ -83,6 +83,7 @@ export default function Header() {
               height: '100%',
               width: 'auto',
               objectFit: 'contain',
+              userSelect: 'none',
             }}
           />
         </div>
@@ -99,6 +100,7 @@ export default function Header() {
             margin: '0 32px',
             fontSize: '1rem',
             fontWeight: 500,
+            userSelect: 'none',
           }}
           onClick={handleMenuClick}
           theme={theme}
@@ -110,7 +112,7 @@ export default function Header() {
                 height: 80,
                 display: 'flex',
                 alignItems: 'center',
-                borderBottom: '3px solid transparent',
+
                 margin: '0 8px',
                 color:
                   item === 'SALE%'
