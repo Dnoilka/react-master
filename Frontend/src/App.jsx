@@ -7,22 +7,23 @@ import { CartProvider } from './components/Header/CartContext';
 import { Layout } from 'antd';
 import Subscribe from './pages/Subscribe';
 import CartPage from './pages/Cart';
-import ProfilePage from './pages/Profile';
+import { UserProvider } from './components/Sider/UserContext';
 
 export default function App() {
   return (
     <Router>
       <CartProvider>
-        <Layout style={{ minHeight: '100vh' }}>
-          <Routes>
-            <Route path="/" element={<Home />}></Route>
-            <Route path="/Shop" element={<Shop />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/Subscribe" element={<Subscribe />} />
-          </Routes>
-        </Layout>
+        <UserProvider>
+          <Layout style={{ minHeight: '100vh' }}>
+            <Routes>
+              <Route path="/" element={<Home />}></Route>
+              <Route path="/Shop" element={<Shop />} />
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/Subscribe" element={<Subscribe />} />
+            </Routes>
+          </Layout>
+        </UserProvider>
       </CartProvider>
     </Router>
   );

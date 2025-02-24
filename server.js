@@ -19,7 +19,9 @@ app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 const dbFilePath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbFilePath);
 
+// Инициализация базы данных
 db.serialize(() => {
+  // Таблица товаров
   db.run(`CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -39,6 +41,16 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
+  // Таблица пользователей
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    name TEXT,
+    createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Проверка и добавление тестовых товаров
   db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
     if (err) return console.error('Error checking products:', err);
 
@@ -108,6 +120,41 @@ db.serialize(() => {
   });
 });
 
+// Обработка промокодов
+const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
+
+function loadPromoCodes() {
+  try {
+    return fs.existsSync(promoCodesFile)
+      ? JSON.parse(fs.readFileSync(promoCodesFile))
+      : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function savePromoCodes(promoCodes) {
+  fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
+}
+
+const promoCodes = loadPromoCodes();
+
+function generatePromoCode() {
+  return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+}
+
+// Настройка почтового клиента
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+// API Endpoints
+
+// Получение списка товаров
 app.get('/api/products', (req, res) => {
   const {
     category,
@@ -120,6 +167,7 @@ app.get('/api/products', (req, res) => {
     country,
     price,
     sortBy,
+    search,
   } = req.query;
 
   let query = `SELECT * FROM products WHERE 1=1`;
@@ -202,6 +250,11 @@ app.get('/api/products', (req, res) => {
     }
   }
 
+  if (search) {
+    query += ` AND name LIKE ?`;
+    params.push(`%${decodeURIComponent(search)}%`);
+  }
+
   if (sortBy) {
     const decodedSortBy = decodeURIComponent(sortBy);
     switch (decodedSortBy) {
@@ -247,36 +300,76 @@ app.get('/api/products', (req, res) => {
   });
 });
 
-const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
+// Аутентификация пользователя
+app.post('/api/login', (req, res) => {
+  const { email, password } = req.body;
 
-function loadPromoCodes() {
-  try {
-    return fs.existsSync(promoCodesFile)
-      ? JSON.parse(fs.readFileSync(promoCodesFile))
-      : {};
-  } catch (e) {
-    return {};
-  }
-}
+  db.get(
+    'SELECT id, email, name FROM users WHERE email = ? AND password = ?',
+    [email, password],
+    (err, user) => {
+      if (err) {
+        return res.status(500).json({ error: 'Ошибка базы данных' });
+      }
+      if (!user) {
+        return res.status(401).json({ error: 'Неверные учетные данные' });
+      }
 
-function savePromoCodes(promoCodes) {
-  fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
-}
-
-const promoCodes = loadPromoCodes();
-
-function generatePromoCode() {
-  return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-}
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
+      res.json({
+        message: 'Успешный вход',
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      });
+    }
+  );
 });
 
+// Регистрация пользователя
+app.post('/api/register', (req, res) => {
+  const { name, email, password } = req.body;
+
+  if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+    return res.status(400).json({
+      error:
+        'Пароль должен содержать минимум 8 символов, одну заглавную букву и цифру',
+    });
+  }
+
+  db.get(
+    'SELECT * FROM users WHERE email = ?',
+    [email],
+    (err, existingUser) => {
+      if (err) {
+        return res.status(500).json({ error: 'Ошибка базы данных' });
+      }
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email уже зарегистрирован' });
+      }
+
+      db.run(
+        'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
+        [email, password, name],
+        function (err) {
+          if (err) {
+            return res
+              .status(500)
+              .json({ error: 'Ошибка создания пользователя' });
+          }
+
+          res.json({
+            message: 'Пользователь успешно зарегистрирован',
+            userId: this.lastID,
+          });
+        }
+      );
+    }
+  );
+});
+
+// Подписка и промокоды
 app.post('/subscribe', async (req, res) => {
   const { email } = req.body;
 
@@ -313,10 +406,12 @@ app.post('/subscribe', async (req, res) => {
   }
 });
 
+// Обслуживание фронтенда
 app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, 'Frontend', 'dist', 'index.html'));
+  res.sendFile(path.resolve(__dirname, 'frontend', 'dist', 'index.html'));
 });
 
+// Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
   console.log(`Режим работы: ${process.env.NODE_ENV || 'development'}`);

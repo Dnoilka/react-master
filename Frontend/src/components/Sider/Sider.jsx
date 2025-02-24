@@ -10,10 +10,12 @@ import {
   ContactsOutlined,
   UserOutlined,
   LockOutlined,
+  LogoutOutlined,
 } from '@ant-design/icons';
 import { Menu, Layout, Button, Modal, Input, Form, Alert } from 'antd';
 import { ThemeContext } from './ThemeContext';
 import { Link } from 'react-router-dom';
+import { useUser } from './UserContext';
 
 const SiderComponent = () => {
   const [collapsed, setCollapsed] = useState(
@@ -22,6 +24,7 @@ const SiderComponent = () => {
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [isRegisterModalVisible, setIsRegisterModalVisible] = useState(false);
   const { theme, toggleTheme } = useContext(ThemeContext);
+  const { user, setUser } = useUser();
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -29,22 +32,54 @@ const SiderComponent = () => {
   }, [collapsed]);
 
   const handleMenuClick = (e) => {
-    if (e.key === 'login') setIsLoginModalVisible(true);
-    else if (e.key === 'theme') toggleTheme();
+    if (e.key === 'login') {
+      if (user) {
+        Modal.confirm({
+          title: 'Подтверждение выхода',
+          content: 'Вы уверены, что хотите выйти из системы?',
+          okText: 'Выйти',
+          cancelText: 'Отмена',
+          onOk: () => setUser(null),
+        });
+      } else {
+        setIsLoginModalVisible(true);
+      }
+    } else if (e.key === 'theme') {
+      toggleTheme();
+    }
   };
 
   const handleAuthSubmit = async (values, isLogin) => {
     try {
-      console.log(values);
-      isLogin
-        ? setIsLoginModalVisible(false)
-        : setIsRegisterModalVisible(false);
-      Modal.success({
-        title: isLogin ? 'Вход выполнен!' : 'Регистрация успешна!',
-        content: isLogin
-          ? 'Добро пожаловать!'
-          : 'Проверьте вашу почту для подтверждения аккаунта',
+      const url = isLogin ? '/api/login' : '/api/register';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(values),
       });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Ошибка сервера');
+      }
+
+      if (isLogin) {
+        setUser(data.user);
+        setIsLoginModalVisible(false);
+        Modal.success({
+          title: 'Вход выполнен!',
+          content: `Добро пожаловать, ${data.user.name}!`,
+        });
+      } else {
+        setIsRegisterModalVisible(false);
+        Modal.success({
+          title: 'Регистрация успешна!',
+          content: 'Теперь вы можете войти в систему',
+        });
+      }
     } catch (error) {
       Modal.error({
         title: 'Ошибка',
@@ -66,7 +101,14 @@ const SiderComponent = () => {
     {
       key: 'login',
       icon: <UserOutlined />,
-      label: 'Личный кабинет',
+      label: user ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>{user.name}</span>
+          <LogoutOutlined style={{ fontSize: 12 }} />
+        </div>
+      ) : (
+        'Личный кабинет'
+      ),
     },
     {
       key: 'sub1',
@@ -129,7 +171,6 @@ const SiderComponent = () => {
           height: 'calc(100vh - 80px)',
           zIndex: 999,
           overflow: 'auto',
-          userSelect: 'none',
         }}
       >
         <div
@@ -170,6 +211,7 @@ const SiderComponent = () => {
         />
       </Layout.Sider>
 
+      {/* Модальное окно входа */}
       <Modal
         title={
           <div
@@ -262,6 +304,7 @@ const SiderComponent = () => {
         </Form>
       </Modal>
 
+      {/* Модальное окно регистрации */}
       <Modal
         title={
           <div
@@ -318,7 +361,14 @@ const SiderComponent = () => {
 
           <Form.Item
             name="password"
-            rules={[{ required: true, message: 'Пожалуйста, введите пароль' }]}
+            rules={[
+              { required: true, message: 'Пожалуйста, введите пароль' },
+              { min: 8, message: 'Минимум 8 символов' },
+              {
+                pattern: /^(?=.*[A-Z])(?=.*\d).+/,
+                message: 'Должна быть заглавная буква и цифра',
+              },
+            ]}
           >
             <Input.Password
               prefix={<LockOutlined />}

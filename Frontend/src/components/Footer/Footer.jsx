@@ -28,7 +28,7 @@ export default function CustomFooter() {
     setEmail(email);
 
     try {
-      const response = await fetch('http://localhost/subscribe', {
+      const response = await fetch('/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -49,7 +49,7 @@ export default function CustomFooter() {
 
   const subscribeEmail = async (email) => {
     try {
-      const response = await fetch('http://localhost/subscribe', {
+      const response = await fetch('/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
