@@ -19,9 +19,7 @@ app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
 const dbFilePath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbFilePath);
 
-// Инициализация базы данных
 db.serialize(() => {
-  // Таблица товаров
   db.run(`CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -41,7 +39,6 @@ db.serialize(() => {
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // Таблица пользователей
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE NOT NULL,
@@ -50,7 +47,6 @@ db.serialize(() => {
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // Проверка и добавление тестовых товаров
   db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
     if (err) return console.error('Error checking products:', err);
 
@@ -120,7 +116,6 @@ db.serialize(() => {
   });
 });
 
-// Обработка промокодов
 const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
 
 function loadPromoCodes() {
@@ -143,7 +138,6 @@ function generatePromoCode() {
   return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
-// Настройка почтового клиента
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
@@ -152,9 +146,6 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// API Endpoints
-
-// Получение списка товаров
 app.get('/api/products', (req, res) => {
   const {
     category,
@@ -300,7 +291,6 @@ app.get('/api/products', (req, res) => {
   });
 });
 
-// Аутентификация пользователя
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
@@ -327,7 +317,6 @@ app.post('/api/login', (req, res) => {
   );
 });
 
-// Регистрация пользователя
 app.post('/api/register', (req, res) => {
   const { name, email, password } = req.body;
 
@@ -369,7 +358,6 @@ app.post('/api/register', (req, res) => {
   );
 });
 
-// Подписка и промокоды
 app.post('/subscribe', async (req, res) => {
   const { email } = req.body;
 
@@ -406,12 +394,10 @@ app.post('/subscribe', async (req, res) => {
   }
 });
 
-// Обслуживание фронтенда
 app.get('*', (req, res) => {
   res.sendFile(path.resolve(__dirname, 'frontend', 'dist', 'index.html'));
 });
 
-// Запуск сервера
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
   console.log(`Режим работы: ${process.env.NODE_ENV || 'development'}`);

@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useContext, useEffect, Children } from 'react';
 import {
   AppstoreOutlined,
   MailOutlined,
@@ -88,7 +88,7 @@ const SiderComponent = () => {
     }
   };
 
-  const menuItems = [
+  const items = [
     {
       key: 'theme',
       label: (
@@ -202,7 +202,7 @@ const SiderComponent = () => {
         <Menu
           theme={theme}
           mode="inline"
-          items={menuItems}
+          items={items}
           onClick={handleMenuClick}
           style={{
             padding: '16px 0',
@@ -210,8 +210,6 @@ const SiderComponent = () => {
           }}
         />
       </Layout.Sider>
-
-      {/* Модальное окно входа */}
       <Modal
         title={
           <div
@@ -304,7 +302,6 @@ const SiderComponent = () => {
         </Form>
       </Modal>
 
-      {/* Модальное окно регистрации */}
       <Modal
         title={
           <div
