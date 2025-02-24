@@ -60,10 +60,9 @@ db.serialize(() => {
           name: 'Мужские классические брюки',
           category: 'Одежда',
           subcategory: 'Брюки',
-          price: 4500,
-          oldPrice: 6000,
-          discount: '25%',
-          image: 'https://via.placeholder.com/200x250',
+          price: 6000,
+          image:
+            'https://a.lmcdn.ru/img389x562/M/P/MP002XM0S8DI_13019465_1_v1_2x.jpg',
           brand: 'Gucci',
           material: 'Хлопок',
           color: 'Черный',
@@ -79,7 +78,8 @@ db.serialize(() => {
           price: 7990,
           oldPrice: 9990,
           discount: '20%',
-          image: 'https://via.placeholder.com/200x250',
+          image:
+            'https://img0.happywear.ru/502x758/cache/goods/H/F/HF77111_%D1%87%D0%B5%D1%80%D0%BD%D1%8B%D0%B9_front.jpg',
           brand: 'Nike',
           material: 'Полиэстер',
           color: 'Синий',
