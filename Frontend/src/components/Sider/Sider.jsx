@@ -11,6 +11,7 @@ import {
   UserOutlined,
   LockOutlined,
   LogoutOutlined,
+  GoogleOutlined,
 } from '@ant-design/icons';
 import { Menu, Layout, Button, Modal, Input, Form, Alert } from 'antd';
 import { ThemeContext } from './ThemeContext';
@@ -279,7 +280,21 @@ const SiderComponent = () => {
           >
             Войти
           </Button>
-
+          <Button
+            block
+            size="large"
+            style={{
+              height: 48,
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: 500,
+              marginTop: 16,
+            }}
+            icon={<GoogleOutlined />}
+            onClick={() => (window.location.href = '/api/auth/google')}
+          >
+            Войти через Google
+          </Button>
           <div
             style={{
               marginTop: 16,
@@ -396,6 +411,21 @@ const SiderComponent = () => {
             }}
           >
             Зарегистрироваться
+          </Button>
+          <Button
+            block
+            size="large"
+            style={{
+              height: 48,
+              borderRadius: 8,
+              fontSize: 16,
+              fontWeight: 500,
+              marginTop: 16,
+            }}
+            icon={<GoogleOutlined />}
+            onClick={() => (window.location.href = '/api/auth/google')}
+          >
+            Войти через Google
           </Button>
           <div
             style={{
