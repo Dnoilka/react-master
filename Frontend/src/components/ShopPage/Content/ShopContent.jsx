@@ -600,7 +600,7 @@ const ShopContent = () => {
             </div>
 
             {hasActiveFilters && (
-              <Button onClick={clearFilters} danger style={{ marginLeft: 12 }}>
+              <Button onClick={clearFilters} danger style={{}}>
                 Сбросить всё
               </Button>
             )}
