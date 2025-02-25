@@ -4,9 +4,9 @@
   box-sizing: border-box;
 }
 @font-face {
-  font-family: 'Miss Stanfort';
-  src: local('Miss Stanfort'),
-    url('./components/HomePage/font/MissStanfort.ttf') format('truetype');
+  font-family: "Miss Stanfort";
+  src: local("Miss Stanfort"),
+    url("./components/HomePage/font/MissStanfort.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
 }
