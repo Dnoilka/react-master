@@ -1,56 +1,56 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from "react"
 
-const UserContext = createContext();
+const UserContext = createContext()
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const savedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    return savedUser && token ? JSON.parse(savedUser) : null;
-  });
+    const savedUser = localStorage.getItem("user")
+    const token = localStorage.getItem("token")
+    return savedUser && token ? JSON.parse(savedUser) : null
+  })
 
-  const verifyToken = async (token) => {
+  const verifyToken = async token => {
     try {
-      const response = await fetch('/api/verify-token', {
+      const response = await fetch("/api/verify-token", {
         headers: {
           Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-      });
+      })
 
-      if (!response.ok) return false;
+      if (!response.ok) return false
 
-      const data = await response.json();
-      return data.valid;
+      const data = await response.json()
+      return data.valid
     } catch (error) {
-      return false;
+      return false
     }
-  };
+  }
 
   useEffect(() => {
     const checkAuth = async () => {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token")
       if (token && (await verifyToken(token))) {
-        const userData = JSON.parse(localStorage.getItem('user'));
-        setUser(userData);
+        const userData = JSON.parse(localStorage.getItem("user"))
+        setUser(userData)
       } else {
-        logout();
+        logout()
       }
-    };
-    checkAuth();
-  }, []);
+    }
+    checkAuth()
+  }, [])
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-  };
+    localStorage.removeItem("token")
+    localStorage.removeItem("user")
+    setUser(null)
+  }
 
   return (
     <UserContext.Provider value={{ user, setUser, logout }}>
       {children}
     </UserContext.Provider>
-  );
-};
+  )
+}
 
-export const useUser = () => useContext(UserContext);
+export const useUser = () => useContext(UserContext)

@@ -261,21 +261,25 @@ app.post('/api/register', async (req, res) => {
         }
 
         const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
-        transporter.sendMail({
-          from: `Dominik Store <${process.env.EMAIL_USER}>`,
-          to: email,
-          subject: 'Подтверждение email',
-          html: `
+        res.json({
+          message: 'Регистрация успешна! Проверьте ваш email для подтверждения',
+        });
+
+        transporter
+          .sendMail({
+            from: `Dominik Store <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: 'Подтверждение email',
+            html: `
             <h1>Подтвердите ваш email</h1>
             <p>Пожалуйста, перейдите по ссылке для подтверждения: 
               <a href="${verificationLink}">${verificationLink}</a>
             </p>
           `,
-        });
-
-        res.json({
-          message: 'Регистрация успешна! Проверьте ваш email для подтверждения',
-        });
+          })
+          .catch((error) => {
+            console.error('Ошибка при отправке email:', error);
+          });
       }
     );
   } catch (error) {
