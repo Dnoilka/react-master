@@ -1,16 +1,16 @@
-import React from "react"
-import { Typography, Card, Form, Input, Button } from "antd"
-import { useUser } from "../components/Sider/UserContext"
-import { Layout } from "antd"
-import Header from "../components/Header/Header"
-import Sider from "../components/Sider/Sider"
-import ThemeProvider from "../components/Sider/ThemeContext"
-import CustomFooter from "../components/Footer/Footer"
+import React from 'react';
+import { Typography, Card, Form, Input, Button } from 'antd';
+import { useUser } from '../components/Sider/UserContext';
+import { Layout } from 'antd';
+import Header from '../components/Header/Header';
+import Sider from '../components/Sider/Sider';
+import ThemeProvider from '../components/Sider/ThemeContext';
+import CustomFooter from '../components/Footer/Footer';
 
-const { Title } = Typography
+const { Title } = Typography;
 
 const Settings = () => {
-  const { user } = useUser()
+  const { user } = useUser();
 
   return (
     <ThemeProvider>
@@ -18,7 +18,7 @@ const Settings = () => {
         <Header />
         <Layout>
           <Sider />
-          <div style={{ padding: 24 }}>
+          <div style={{ padding: 24, width: '100%' }}>
             <Card title="Настройки профиля">
               <Title level={4}>Обновить информацию</Title>
               <Form initialValues={user}>
@@ -36,7 +36,7 @@ const Settings = () => {
         <CustomFooter />
       </Layout>
     </ThemeProvider>
-  )
-}
+  );
+};
 
-export default Settings
+export default Settings;
