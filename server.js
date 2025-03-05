@@ -10,11 +10,37 @@ const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const passport = require('passport');
+const multer = require('multer');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const saltRounds = 10;
+
+// Настройка хранилища для загрузки файлов
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(
+      null,
+      `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`
+    );
+  },
+});
+
+const upload = multer({
+  storage: storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Разрешены только изображения!'), false);
+    }
+  },
+});
 
 // Настройка Passport
 app.use(passport.initialize());
@@ -40,7 +66,7 @@ passport.use(
 
           if (!user) {
             db.run(
-              'INSERT INTO users (email, name, isVerified, authMethod) VALUES (?, ?, TRUE, "google")',
+              'INSERT INTO users (email, patronymic, surname , name, isVerified, authMethod) VALUES (?, ?, TRUE, "google")',
               [profile.emails[0].value, profile.displayName],
               function (err) {
                 if (err) return done(err);
@@ -49,6 +75,8 @@ passport.use(
                   id: this.lastID,
                   email: profile.emails[0].value,
                   name: profile.displayName,
+                  surname: profile.displayName,
+                  patronymic: profile.name.display,
                   isVerified: true,
                   authMethod: 'google',
                 };
@@ -70,6 +98,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const dbFilePath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbFilePath);
@@ -100,6 +129,9 @@ db.serialize(() => {
     email TEXT UNIQUE,
     password TEXT,
     name TEXT,
+    surname TEXT,
+    patronymic TEXT,
+    avatar TEXT,
     isVerified BOOLEAN DEFAULT FALSE,
     verificationToken TEXT,
     resetPasswordToken TEXT,
@@ -109,7 +141,7 @@ db.serialize(() => {
   )`);
 
   db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
-    if (err) return console.error('Error checking products:', err);
+    if (err) return console.error('Ошибка при проверке продуктов:', err);
 
     if (row.count === 0) {
       const products = [
@@ -172,7 +204,7 @@ db.serialize(() => {
       });
 
       stmt.finalize();
-      console.log('Added initial products');
+      console.log('Добавлены начальные продукты');
     }
   });
 });
@@ -233,7 +265,7 @@ const authenticateJWT = (req, res, next) => {
 
 // Маршруты аутентификации
 app.post('/api/register', async (req, res) => {
-  const { name, email, password } = req.body;
+  const { name, surname, patronymic, email, password } = req.body;
 
   try {
     if (
@@ -252,15 +284,15 @@ app.post('/api/register', async (req, res) => {
     const verificationToken = crypto.randomBytes(20).toString('hex');
 
     db.run(
-      `INSERT INTO users (email, password, name, verificationToken, authMethod) 
+      `INSERT INTO users (email, password,patronymic, surname, name, verificationToken, authMethod) 
        VALUES (?, ?, ?, ?, "email")`,
-      [email, hashedPassword, name, verificationToken],
+      [email, hashedPassword, patronymic, surname, name, verificationToken],
       function (err) {
         if (err) {
           return res.status(400).json({ error: 'Email уже зарегистрирован' });
         }
 
-        const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+        const verificationLink = `http://localhost:${PORT}/verify-email?token=${verificationToken}`;
         res.json({
           message: 'Регистрация успешна! Проверьте ваш email для подтверждения',
         });
@@ -340,6 +372,7 @@ app.post('/api/login', (req, res) => {
         id: user.id,
         name: user.name,
         email: user.email,
+        avatar: user.avatar,
       },
     });
   });
@@ -362,7 +395,7 @@ app.post('/api/forgot-password', async (req, res) => {
       async (err) => {
         if (err) return res.status(500).json({ error: 'Ошибка сервера' });
 
-        const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+        const resetLink = `http://localhost:${PORT}/reset-password?token=${resetToken}`;
         await transporter.sendMail({
           from: `Dominik Store <${process.env.EMAIL_USER}>`,
           to: email,
@@ -414,7 +447,12 @@ app.post('/api/reset-password', async (req, res) => {
 });
 
 app.get('/api/verify-token', authenticateJWT, (req, res) => {
-  res.json({ valid: true, user: req.user });
+  db.get('SELECT * FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err || !user) {
+      return res.status(401).json({ valid: false });
+    }
+    res.json({ valid: true, user });
+  });
 });
 
 // Google OAuth Routes
@@ -422,14 +460,14 @@ app.get(
   '/api/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
+
 app.get(
   '/api/auth/google/callback',
   passport.authenticate('google', { session: false }),
   (req, res) => {
     const user = req.user;
     const token = generateAuthToken(user);
-    // Добавляем явный разделитель между URL и параметрами
-    res.redirect(`http://localhost:3000/auth-success?token=${token}`);
+    res.redirect(`http://localhost:${PORT}/auth-success?token=${token}`);
   }
 );
 
@@ -563,8 +601,8 @@ app.get('/api/products', (req, res) => {
 
   db.all(query, params, (err, rows) => {
     if (err) {
-      console.error('Database error:', err);
-      return res.status(500).json({ error: 'Database error' });
+      console.error('Ошибка базы данных:', err);
+      return res.status(500).json({ error: 'Ошибка базы данных' });
     }
 
     const processed = rows.map((row) => ({
@@ -614,6 +652,51 @@ app.post('/subscribe', async (req, res) => {
     res.status(500).json({ message: 'Ошибка отправки письма' });
   }
 });
+
+// Эндпоинт для загрузки аватара
+app.post(
+  '/api/upload-avatar',
+  authenticateJWT,
+  upload.single('avatar'),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'Файл не загружен' });
+      }
+
+      const avatarPath = `/uploads/${req.file.filename}`;
+
+      db.run(
+        'UPDATE users SET avatar = ? WHERE id = ?',
+        [avatarPath, req.user.id],
+        function (err) {
+          if (err) {
+            console.error('Ошибка базы данных:', err);
+            return res.status(500).json({ error: 'Ошибка базы данных' });
+          }
+
+          db.get(
+            'SELECT * FROM users WHERE id = ?',
+            [req.user.id],
+            (err, user) => {
+              if (err)
+                return res.status(500).json({ error: 'Ошибка базы данных' });
+
+              res.json({
+                message: 'Аватар успешно загружен',
+                avatarUrl: avatarPath,
+                user,
+              });
+            }
+          );
+        }
+      );
+    } catch (error) {
+      console.error('Ошибка загрузки:', error);
+      res.status(500).json({ error: 'Ошибка загрузки' });
+    }
+  }
+);
 
 // Обработка всех остальных запросов
 app.get('*', (req, res) => {
