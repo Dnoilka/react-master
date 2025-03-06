@@ -4,7 +4,7 @@ import React, {
   useContext,
   useCallback,
   useMemo,
-} from "react"
+} from 'react';
 import {
   Layout,
   Menu,
@@ -22,74 +22,74 @@ import {
   Alert,
   ConfigProvider,
   Empty,
-} from "antd"
-import { DownOutlined } from "@ant-design/icons"
-import { ThemeContext } from "../../Sider/ThemeContext"
-import { debounce } from "lodash-es"
-import { useSearchParams } from "react-router-dom"
+} from 'antd';
+import { DownOutlined } from '@ant-design/icons';
+import { ThemeContext } from '../../Sider/ThemeContext';
+import { debounce } from 'lodash-es';
+import { useSearchParams } from 'react-router-dom';
 
-const { Content, Sider } = Layout
-const { Title, Text } = Typography
+const { Content, Sider } = Layout;
+const { Title, Text } = Typography;
 
 const categories = [
   {
-    title: "Одежда",
+    title: 'Одежда',
     subcategories: [
-      "Брюки",
-      "Верхняя одежда",
-      "Джемперы, свитеры и кардиганы",
-      "Джинсы",
-      "Домашняя одежда",
-      "Комбинезоны",
-      "Майки",
-      "Нижнее белье",
+      'Брюки',
+      'Верхняя одежда',
+      'Джемперы, свитеры и кардиганы',
+      'Джинсы',
+      'Домашняя одежда',
+      'Комбинезоны',
+      'Майки',
+      'Нижнее белье',
     ],
   },
   {
-    title: "Спорт",
-    subcategories: ["Поло", "Спортивные костюмы"],
+    title: 'Спорт',
+    subcategories: ['Поло', 'Спортивные костюмы'],
   },
   {
-    title: "Аксессуары",
-    subcategories: ["Запонки", "Ремни"],
+    title: 'Аксессуары',
+    subcategories: ['Запонки', 'Ремни'],
   },
   {
-    title: "Товары для дома",
-    subcategories: ["Постельное белье", "Кухонные принадлежности"],
+    title: 'Товары для дома',
+    subcategories: ['Постельное белье', 'Кухонные принадлежности'],
   },
   {
-    title: "Красота",
-    subcategories: ["Косметика", "Парфюмерия"],
+    title: 'Красота',
+    subcategories: ['Косметика', 'Парфюмерия'],
   },
-]
+];
 
 const filterOptions = {
-  sort: ["Новинки", "Сначала дороже", "Сначала дешевле", "По величине скидки"],
+  sort: ['Новинки', 'Сначала дороже', 'Сначала дешевле', 'По величине скидки'],
   filters: {
-    material: ["Хлопок", "Шерсть", "Кожа", "Синтетика"],
-    color: ["Красный", "Синий", "Зеленый", "Черный", "Белый"],
-    size: ["S", "M", "L", "XL", "XXL", "XXXL"],
-    brand: ["Nike", "Adidas", "Puma", "Reebok", "Gucci"],
-    country: ["Италия", "Китай", "Россия", "Турция"],
+    material: ['Хлопок', 'Шерсть', 'Кожа', 'Синтетика'],
+    color: ['Красный', 'Синий', 'Зеленый', 'Черный', 'Белый'],
+    size: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
+    brand: ['Nike', 'Adidas', 'Puma', 'Reebok', 'Gucci'],
+    country: ['Италия', 'Китай', 'Россия', 'Турция'],
   },
-  priceRanges: ["До 1000 ₽", "1000-3000 ₽", "3000-5000 ₽", "Больше 5000 ₽"],
-}
+  priceRanges: ['До 1000 ₽', '1000-3000 ₽', '3000-5000 ₽', 'Больше 5000 ₽'],
+};
 
 const filterLabels = {
-  material: "Материалы",
-  color: "Цвет",
-  size: "Размер",
-  brand: "Бренд",
-  country: "Страна производства",
-  price: "Цена",
-}
+  material: 'Материалы',
+  color: 'Цвет',
+  size: 'Размер',
+  brand: 'Бренд',
+  country: 'Страна производства',
+  price: 'Цена',
+};
 
 const ShopContent = () => {
-  const { theme } = useContext(ThemeContext)
-  const [searchParams, setSearchParams] = useSearchParams()
-  const isDarkMode = theme === "dark"
-  const textColor = isDarkMode ? "#fff" : "#000"
-  const backgroundColor = isDarkMode ? "#12172a" : "#f0f0f0"
+  const { theme } = useContext(ThemeContext);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isDarkMode = theme === 'dark';
+  const textColor = isDarkMode ? '#fff' : '#000';
+  const backgroundColor = isDarkMode ? '#12172a' : '#f0f0f0';
 
   const [state, setState] = useState({
     products: [],
@@ -108,87 +108,87 @@ const ShopContent = () => {
     loading: false,
     error: null,
     isInitialLoad: true,
-  })
+  });
 
   useEffect(() => {
-    const category = searchParams.get("category")
-    const subcategory = searchParams.get("subcategory")
-    const discount = searchParams.get("discount") === "true"
-    const sortBy = searchParams.get("sortBy")
+    const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
+    const discount = searchParams.get('discount') === 'true';
+    const sortBy = searchParams.get('sortBy');
 
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       selectedCategory: category ? decodeURIComponent(category) : null,
       selectedSubcategory: subcategory ? decodeURIComponent(subcategory) : null,
       onlyWithDiscount: discount,
       sort: sortBy ? decodeURIComponent(sortBy) : null,
-    }))
-  }, [searchParams])
+    }));
+  }, [searchParams]);
 
   useEffect(() => {
-    const params = {}
+    const params = {};
 
     if (state.selectedCategory)
-      params.category = encodeURIComponent(state.selectedCategory)
+      params.category = encodeURIComponent(state.selectedCategory);
     if (state.selectedSubcategory)
-      params.subcategory = encodeURIComponent(state.selectedSubcategory)
-    if (state.onlyWithDiscount) params.discount = "true"
-    if (state.sort) params.sortBy = encodeURIComponent(state.sort)
+      params.subcategory = encodeURIComponent(state.selectedSubcategory);
+    if (state.onlyWithDiscount) params.discount = 'true';
+    if (state.sort) params.sortBy = encodeURIComponent(state.sort);
 
-    setSearchParams(params)
+    setSearchParams(params);
   }, [
     state.selectedCategory,
     state.selectedSubcategory,
     state.onlyWithDiscount,
     state.sort,
     setSearchParams,
-  ])
+  ]);
 
   const buildQueryParams = useMemo(() => {
-    const params = new URLSearchParams()
+    const params = new URLSearchParams();
 
     if (state.selectedCategory) {
-      params.append("category", state.selectedCategory)
+      params.append('category', state.selectedCategory);
     }
 
     if (state.selectedSubcategory) {
-      params.append("subcategory", state.selectedSubcategory)
+      params.append('subcategory', state.selectedSubcategory);
     }
 
     if (state.onlyWithDiscount) {
-      params.append("discount", "true")
+      params.append('discount', 'true');
     }
 
     if (state.sort) {
-      params.append("sortBy", state.sort)
+      params.append('sortBy', state.sort);
     }
 
     Object.entries(state.filters).forEach(([key, values]) => {
       if (values.length > 0) {
-        params.append(key, values.join(","))
+        params.append(key, values.join(','));
       }
-    })
+    });
 
-    state.priceRange.forEach(range => {
+    state.priceRange.forEach((range) => {
       switch (range) {
-        case "До 1000 ₽":
-          params.append("price", "0-1000")
-          break
-        case "1000-3000 ₽":
-          params.append("price", "1000-3000")
-          break
-        case "3000-5000 ₽":
-          params.append("price", "3000-5000")
-          break
-        case "Больше 5000 ₽":
-          params.append("price", "5000-")
-          break
+        case 'До 1000 ₽':
+          params.append('price', '0-1000');
+          break;
+        case '1000-3000 ₽':
+          params.append('price', '1000-3000');
+          break;
+        case '3000-5000 ₽':
+          params.append('price', '3000-5000');
+          break;
+        case 'Больше 5000 ₽':
+          params.append('price', '5000-');
+          break;
         default:
-          break
+          break;
       }
-    })
+    });
 
-    return params.toString()
+    return params.toString();
   }, [
     state.selectedCategory,
     state.selectedSubcategory,
@@ -196,66 +196,66 @@ const ShopContent = () => {
     state.sort,
     state.filters,
     state.priceRange,
-  ])
+  ]);
 
   const fetchProducts = useCallback(
-    debounce(async params => {
+    debounce(async (params) => {
       if (state.isInitialLoad) {
-        setState(prev => ({ ...prev, loading: true, error: null }))
+        setState((prev) => ({ ...prev, loading: true, error: null }));
       }
       try {
-        const encodedParams = encodeURI(params)
+        const encodedParams = encodeURI(params);
         const response = await fetch(
           `http://localhost:3000/api/products?${encodedParams}`
-        )
+        );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-        const data = await response.json()
-        setState(prev => ({
+        const data = await response.json();
+        setState((prev) => ({
           ...prev,
           products: data,
           loading: false,
           error: null,
           isInitialLoad: false,
-        }))
+        }));
       } catch (err) {
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           error: `Ошибка загрузки: ${err.message}. Попробуйте обновить страницу`,
           products: [],
           loading: false,
           isInitialLoad: false,
-        }))
+        }));
       }
     }, 500),
     [state.isInitialLoad]
-  )
+  );
 
   useEffect(() => {
-    const params = buildQueryParams
-    fetchProducts(params)
-  }, [buildQueryParams, fetchProducts])
+    const params = buildQueryParams;
+    fetchProducts(params);
+  }, [buildQueryParams, fetchProducts]);
 
   const handleFilterChange = (filterType, values) => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       filters: { ...prev.filters, [filterType]: values },
-    }))
-  }
+    }));
+  };
 
-  const handlePriceChange = values => {
-    setState(prev => ({ ...prev, priceRange: values }))
-  }
+  const handlePriceChange = (values) => {
+    setState((prev) => ({ ...prev, priceRange: values }));
+  };
 
-  const handleSortChange = value => {
-    setState(prev => ({ ...prev, sort: value }))
-  }
+  const handleSortChange = (value) => {
+    setState((prev) => ({ ...prev, sort: value }));
+  };
 
   const clearFilters = () => {
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       selectedCategory: null,
       selectedSubcategory: null,
@@ -269,45 +269,45 @@ const ShopContent = () => {
       priceRange: [],
       onlyWithDiscount: false,
       sort: null,
-    }))
-  }
+    }));
+  };
 
   const hasActiveFilters =
-    Object.values(state.filters).some(v => v.length > 0) ||
+    Object.values(state.filters).some((v) => v.length > 0) ||
     state.priceRange.length > 0 ||
     state.onlyWithDiscount ||
     state.selectedCategory ||
-    state.selectedSubcategory
+    state.selectedSubcategory;
 
   const antTheme = {
     token: {
-      colorBgContainer: isDarkMode ? "#1c2233" : "#fff",
+      colorBgContainer: isDarkMode ? '#1c2233' : '#fff',
       colorText: textColor,
-      colorBorder: isDarkMode ? "#2d3746" : "#d9d9d9",
-      colorPrimary: "#1890ff",
+      colorBorder: isDarkMode ? '#2d3746' : '#d9d9d9',
+      colorPrimary: '#1890ff',
     },
     components: {
       Card: {
-        colorBgContainer: isDarkMode ? "#1c2233" : "#fff",
-        colorBorderSecondary: isDarkMode ? "#2d3746" : "#f0f0f0",
+        colorBgContainer: isDarkMode ? '#1c2233' : '#fff',
+        colorBorderSecondary: isDarkMode ? '#2d3746' : '#f0f0f0',
       },
       Dropdown: {
-        colorBgElevated: isDarkMode ? "#1c2233" : "#fff",
+        colorBgElevated: isDarkMode ? '#1c2233' : '#fff',
         colorText: textColor,
       },
       Menu: {
-        itemBg: isDarkMode ? "#1c2233" : "#fff",
-        itemHoverBg: isDarkMode ? "#2d3746" : "#fafafa",
+        itemBg: isDarkMode ? '#1c2233' : '#fff',
+        itemHoverBg: isDarkMode ? '#2d3746' : '#fafafa',
       },
     },
-  }
+  };
 
   const renderClearButton = (onClear, disabled) => (
     <div
       style={{
-        padding: "8px 12px",
+        padding: '8px 12px',
         borderTop: `1px solid ${antTheme.token.colorBorder}`,
-        position: "sticky",
+        position: 'sticky',
         bottom: 0,
         zIndex: 1,
       }}
@@ -319,15 +319,15 @@ const ShopContent = () => {
         onClick={onClear}
         disabled={disabled}
         style={{
-          width: "100%",
-          textAlign: "right",
+          width: '100%',
+          textAlign: 'right',
           paddingRight: 0,
         }}
       >
         Очистить
       </Button>
     </div>
-  )
+  );
 
   return (
     <ConfigProvider
@@ -338,12 +338,12 @@ const ShopContent = () => {
           image={Empty.PRESENTED_IMAGE_SIMPLE}
           imageStyle={{
             height: 60,
-            filter: isDarkMode ? "invert(1)" : "none",
+            filter: isDarkMode ? 'invert(1)' : 'none',
           }}
         />
       )}
     >
-      <Layout style={{ minHeight: "100vh", backgroundColor }}>
+      <Layout style={{ minHeight: '100vh', backgroundColor }}>
         <Sider
           width={280}
           style={{
@@ -353,7 +353,7 @@ const ShopContent = () => {
           breakpoint="lg"
           collapsedWidth="0"
         >
-          <div style={{ padding: "24px 16px" }}>
+          <div style={{ padding: '24px 16px' }}>
             <Title
               level={4}
               style={{
@@ -367,12 +367,12 @@ const ShopContent = () => {
             <Menu
               mode="inline"
               style={{
-                background: "transparent",
+                background: 'transparent',
                 borderRight: 0,
               }}
               selectedKeys={[state.selectedCategory, state.selectedSubcategory]}
             >
-              {categories.map(category => (
+              {categories.map((category) => (
                 <Menu.SubMenu
                   key={category.title}
                   title={
@@ -390,7 +390,7 @@ const ShopContent = () => {
                     </span>
                   }
                   onTitleClick={() =>
-                    setState(prev => ({
+                    setState((prev) => ({
                       ...prev,
                       selectedCategory:
                         prev.selectedCategory === category.title
@@ -400,11 +400,11 @@ const ShopContent = () => {
                     }))
                   }
                 >
-                  {category.subcategories.map(sub => (
+                  {category.subcategories.map((sub) => (
                     <Menu.Item
                       key={sub}
                       onClick={() =>
-                        setState(prev => ({
+                        setState((prev) => ({
                           ...prev,
                           selectedSubcategory:
                             prev.selectedSubcategory === sub ? null : sub,
@@ -413,8 +413,8 @@ const ShopContent = () => {
                       style={{
                         background:
                           state.selectedSubcategory === sub
-                            ? "#e6f7ff20"
-                            : "transparent",
+                            ? '#e6f7ff20'
+                            : 'transparent',
                         color:
                           state.selectedSubcategory === sub
                             ? antTheme.token.colorPrimary
@@ -434,36 +434,36 @@ const ShopContent = () => {
         </Sider>
 
         <Content style={{ padding: 24, backgroundColor }}>
-          <Space wrap size="middle" style={{ marginBottom: 24, width: "100%" }}>
+          <Space wrap size="middle" style={{ marginBottom: 24, width: '100%' }}>
             <Dropdown
               menu={{
                 items: [
                   {
-                    label: "Подобрано для вас",
-                    key: "random",
+                    label: 'Подобрано для вас',
+                    key: 'random',
                     style: {
-                      pointerEvents: "none",
-                      padding: "8px 12px",
-                      color: isDarkMode ? "#8c8c8c" : "#bfbfbf",
+                      pointerEvents: 'none',
+                      padding: '8px 12px',
+                      color: isDarkMode ? '#8c8c8c' : '#bfbfbf',
                     },
                     disabled: true,
                   },
-                  ...filterOptions.sort.map(item => ({
+                  ...filterOptions.sort.map((item) => ({
                     key: item,
                     label: (
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "8px 12px",
-                          cursor: "pointer",
-                          transition: "background 0.3s",
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          transition: 'background 0.3s',
                         }}
                         onClick={() => handleSortChange(item)}
                       >
                         <Radio
                           checked={state.sort === item}
-                          style={{ pointerEvents: "none" }}
+                          style={{ pointerEvents: 'none' }}
                         />
                         <span style={{ marginLeft: 12 }}>{item}</span>
                       </div>
@@ -471,10 +471,10 @@ const ShopContent = () => {
                   })),
                 ],
               }}
-              trigger={["click"]}
+              trigger={['click']}
             >
-              <Button style={{ minWidth: 240 }}>
-                {state.sort ? ` ${state.sort}` : " Подобрано для вас"}
+              <Button style={{ minWidth: 120, maxWidth: 200 }}>
+                {state.sort ? ` ${state.sort}` : ' Подобрано для вас'}
                 <DownOutlined style={{ marginLeft: 12 }} />
               </Button>
             </Dropdown>
@@ -484,34 +484,34 @@ const ShopContent = () => {
                 key={key}
                 menu={{
                   items: [
-                    ...values.map(value => ({
+                    ...values.map((value) => ({
                       key: value,
                       label: (
                         <div
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            padding: "8px 12px",
-                            cursor: "pointer",
-                            transition: "background 0.3s",
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                            transition: 'background 0.3s',
                           }}
                           onClick={() => {
                             const newValues = state.filters[key].includes(value)
-                              ? state.filters[key].filter(v => v !== value)
-                              : [...state.filters[key], value]
-                            handleFilterChange(key, newValues)
+                              ? state.filters[key].filter((v) => v !== value)
+                              : [...state.filters[key], value];
+                            handleFilterChange(key, newValues);
                           }}
                         >
                           <Checkbox
                             checked={state.filters[key].includes(value)}
-                            style={{ pointerEvents: "none" }}
+                            style={{ pointerEvents: 'none' }}
                           />
                           <span style={{ marginLeft: 12 }}>{value}</span>
                         </div>
                       ),
                     })),
                     {
-                      key: "clear",
+                      key: 'clear',
                       label: renderClearButton(
                         () => handleFilterChange(key, []),
                         state.filters[key].length === 0
@@ -519,9 +519,9 @@ const ShopContent = () => {
                     },
                   ],
                 }}
-                trigger={["click"]}
+                trigger={['click']}
               >
-                <Button style={{ minWidth: 160 }}>
+                <Button style={{ minWidth: 120, maxWidth: 200 }}>
                   {filterLabels[key]}
                   {state.filters[key].length > 0 &&
                     ` (${state.filters[key].length})`}
@@ -533,34 +533,34 @@ const ShopContent = () => {
             <Dropdown
               menu={{
                 items: [
-                  ...filterOptions.priceRanges.map(range => ({
+                  ...filterOptions.priceRanges.map((range) => ({
                     key: range,
                     label: (
                       <div
                         style={{
-                          display: "flex",
-                          alignItems: "center",
-                          padding: "8px 12px",
-                          cursor: "pointer",
-                          transition: "background 0.3s",
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          transition: 'background 0.3s',
                         }}
                         onClick={() => {
                           const newValues = state.priceRange.includes(range)
-                            ? state.priceRange.filter(r => r !== range)
-                            : [...state.priceRange, range]
-                          handlePriceChange(newValues)
+                            ? state.priceRange.filter((r) => r !== range)
+                            : [...state.priceRange, range];
+                          handlePriceChange(newValues);
                         }}
                       >
                         <Checkbox
                           checked={state.priceRange.includes(range)}
-                          style={{ pointerEvents: "none" }}
+                          style={{ pointerEvents: 'none' }}
                         />
                         <span style={{ marginLeft: 12 }}>{range}</span>
                       </div>
                     ),
                   })),
                   {
-                    key: "clear",
+                    key: 'clear',
                     label: renderClearButton(
                       () => handlePriceChange([]),
                       state.priceRange.length === 0
@@ -568,9 +568,9 @@ const ShopContent = () => {
                   },
                 ],
               }}
-              trigger={["click"]}
+              trigger={['click']}
             >
-              <Button style={{ minWidth: 160 }}>
+              <Button style={{ minWidth: 120, maxWidth: 200 }}>
                 {filterLabels.price}
                 {state.priceRange.length > 0 && ` (${state.priceRange.length})`}
                 <DownOutlined style={{ marginLeft: 12 }} />
@@ -579,10 +579,10 @@ const ShopContent = () => {
 
             <div
               style={{
-                display: "flex",
-                alignItems: "center",
+                display: 'flex',
+                alignItems: 'center',
                 gap: 8,
-                padding: "6px 12px",
+                padding: '6px 12px',
                 borderRadius: 6,
                 background: antTheme.token.colorBgContainer,
               }}
@@ -590,8 +590,8 @@ const ShopContent = () => {
               <Text style={{ color: textColor }}>Со скидкой:</Text>
               <Switch
                 checked={state.onlyWithDiscount}
-                onChange={checked =>
-                  setState(prev => ({
+                onChange={(checked) =>
+                  setState((prev) => ({
                     ...prev,
                     onlyWithDiscount: checked,
                   }))
@@ -615,7 +615,7 @@ const ShopContent = () => {
               closable
               style={{
                 marginBottom: 24,
-                border: `1px solid ${isDarkMode ? "#2a1215" : "#ffccc7"}`,
+                border: `1px solid ${isDarkMode ? '#2a1215' : '#ffccc7'}`,
               }}
             />
           )}
@@ -623,7 +623,7 @@ const ShopContent = () => {
           {state.loading && state.isInitialLoad ? (
             <div
               style={{
-                textAlign: "center",
+                textAlign: 'center',
                 padding: 80,
                 background: antTheme.token.colorBgContainer,
                 borderRadius: 8,
@@ -637,7 +637,7 @@ const ShopContent = () => {
             </div>
           ) : (
             <Row gutter={[24, 24]} justify="start">
-              {state.products.map(product => (
+              {state.products.map((product) => (
                 <Col
                   key={product.id}
                   xs={24}
@@ -650,32 +650,32 @@ const ShopContent = () => {
                   <Card
                     hoverable
                     style={{
-                      height: "100%",
+                      height: '100%',
                       border: `1px solid ${antTheme.token.colorBorder}`,
                     }}
                     cover={
                       <div
                         style={{
                           height: 320,
-                          position: "relative",
+                          position: 'relative',
                           background: `url(${
-                            product.image || "/placeholder.jpg"
+                            product.image || '/placeholder.jpg'
                           }) center/cover no-repeat`,
                         }}
                       >
                         {product.discount && (
                           <div
                             style={{
-                              position: "absolute",
+                              position: 'absolute',
                               top: 12,
                               right: 12,
-                              backgroundColor: "#ff4d4f",
-                              color: "#fff",
-                              padding: "4px 10px",
+                              backgroundColor: '#ff4d4f',
+                              color: '#fff',
+                              padding: '4px 10px',
                               borderRadius: 4,
                               fontSize: 12,
                               fontWeight: 600,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                             }}
                           >
                             {product.discount}
@@ -705,7 +705,7 @@ const ShopContent = () => {
                         {product.rating && (
                           <Text
                             style={{
-                              color: "#faad14",
+                              color: '#faad14',
                               marginRight: 8,
                               fontSize: 14,
                             }}
@@ -725,7 +725,7 @@ const ShopContent = () => {
                           <Text
                             delete
                             style={{
-                              color: "#8c8c8c",
+                              color: '#8c8c8c',
                               marginRight: 8,
                               fontSize: 12,
                             }}
@@ -735,7 +735,7 @@ const ShopContent = () => {
                         )}
                         <Text
                           style={{
-                            color: "#cf1322",
+                            color: '#cf1322',
                             fontWeight: 600,
                             fontSize: 16,
                           }}
@@ -752,7 +752,7 @@ const ShopContent = () => {
         </Content>
       </Layout>
     </ConfigProvider>
-  )
-}
+  );
+};
 
-export default ShopContent
+export default ShopContent;
