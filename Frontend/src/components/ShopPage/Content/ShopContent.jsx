@@ -22,11 +22,14 @@ import {
   Alert,
   ConfigProvider,
   Empty,
+  Slider,
+  InputNumber,
 } from 'antd';
-import { DownOutlined } from '@ant-design/icons';
+import { DownOutlined, HeartOutlined, HeartFilled } from '@ant-design/icons';
 import { ThemeContext } from '../../Sider/ThemeContext';
+import { WishlistContext } from '../../Header/WishlistContext';
 import { debounce } from 'lodash-es';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, Link } from 'react-router-dom';
 
 const { Content, Sider } = Layout;
 const { Title, Text } = Typography;
@@ -72,7 +75,6 @@ const filterOptions = {
     brand: ['Nike', 'Adidas', 'Puma', 'Reebok', 'Gucci'],
     country: ['Италия', 'Китай', 'Россия', 'Турция'],
   },
-  priceRanges: ['До 1000 ₽', '1000-3000 ₽', '3000-5000 ₽', 'Больше 5000 ₽'],
 };
 
 const filterLabels = {
@@ -81,8 +83,111 @@ const filterLabels = {
   size: 'Размер',
   brand: 'Бренд',
   country: 'Страна производства',
-  price: 'Цена',
 };
+
+const ProductCard = React.memo(({ product, textColor, antTheme }) => {
+  const { wishlist, addToWishlist, removeFromWishlist } =
+    useContext(WishlistContext);
+  const isInWishlist = wishlist.includes(product.id);
+
+  return (
+    <Link to={`/product/${product.id}`}>
+      <Card
+        hoverable
+        style={{
+          height: '100%',
+          border: `1px solid ${antTheme.token.colorBorder}`,
+        }}
+        cover={
+          <div
+            style={{
+              height: 320,
+              position: 'relative',
+              background: `url(${
+                product.image || '/placeholder.jpg'
+              }) center/cover no-repeat`,
+            }}
+          >
+            {product.discount && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  backgroundColor: '#ff4d4f',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  borderRadius: 4,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                }}
+              >
+                {product.discount}
+              </div>
+            )}
+          </div>
+        }
+        bodyStyle={{ padding: 16, background: antTheme.token.colorBgContainer }}
+        actions={[
+          <Button
+            type="text"
+            icon={
+              isInWishlist ? (
+                <HeartFilled style={{ color: '#ff4d4f' }} />
+              ) : (
+                <HeartOutlined />
+              )
+            }
+            onClick={(e) => {
+              e.preventDefault();
+              isInWishlist
+                ? removeFromWishlist(product.id)
+                : addToWishlist(product.id);
+            }}
+          />,
+        ]}
+      >
+        <div style={{ minHeight: 110 }}>
+          <Title
+            level={5}
+            style={{ fontSize: 15, marginBottom: 8, color: textColor }}
+            ellipsis={{ rows: 2 }}
+          >
+            {product.name}
+          </Title>
+
+          <div style={{ marginBottom: 12 }}>
+            {product.rating && (
+              <Text style={{ color: '#faad14', marginRight: 8, fontSize: 14 }}>
+                ★{product.rating.toFixed(1)}
+              </Text>
+            )}
+            {product.reviews > 0 && (
+              <Text type="secondary" style={{ fontSize: 12 }}>
+                ({product.reviews} отзывов)
+              </Text>
+            )}
+          </div>
+
+          <div>
+            {product.oldPrice > 0 && (
+              <Text
+                delete
+                style={{ color: '#8c8c8c', marginRight: 8, fontSize: 12 }}
+              >
+                {product.oldPrice.toLocaleString()}₽
+              </Text>
+            )}
+            <Text style={{ color: '#cf1322', fontWeight: 600, fontSize: 16 }}>
+              {product.price.toLocaleString()}₽
+            </Text>
+          </div>
+        </div>
+      </Card>
+    </Link>
+  );
+});
 
 const ShopContent = () => {
   const { theme } = useContext(ThemeContext);
@@ -103,18 +208,25 @@ const ShopContent = () => {
       country: [],
     },
     sort: null,
-    priceRange: [],
+    priceRange: [0, 10000],
     onlyWithDiscount: false,
     loading: false,
     error: null,
     isInitialLoad: true,
+    currentPage: 1,
+    totalPages: 1,
   });
+
+  const [visibleDropdown, setVisibleDropdown] = useState(null);
+  const [visiblePriceDropdown, setVisiblePriceDropdown] = useState(false);
+  const [tempPriceRange, setTempPriceRange] = useState(state.priceRange);
 
   useEffect(() => {
     const category = searchParams.get('category');
     const subcategory = searchParams.get('subcategory');
     const discount = searchParams.get('discount') === 'true';
     const sortBy = searchParams.get('sortBy');
+    const page = parseInt(searchParams.get('page')) || 1;
 
     setState((prev) => ({
       ...prev,
@@ -122,6 +234,7 @@ const ShopContent = () => {
       selectedSubcategory: subcategory ? decodeURIComponent(subcategory) : null,
       onlyWithDiscount: discount,
       sort: sortBy ? decodeURIComponent(sortBy) : null,
+      currentPage: page,
     }));
   }, [searchParams]);
 
@@ -134,6 +247,7 @@ const ShopContent = () => {
       params.subcategory = encodeURIComponent(state.selectedSubcategory);
     if (state.onlyWithDiscount) params.discount = 'true';
     if (state.sort) params.sortBy = encodeURIComponent(state.sort);
+    params.page = state.currentPage;
 
     setSearchParams(params);
   }, [
@@ -141,6 +255,7 @@ const ShopContent = () => {
     state.selectedSubcategory,
     state.onlyWithDiscount,
     state.sort,
+    state.currentPage,
     setSearchParams,
   ]);
 
@@ -169,24 +284,15 @@ const ShopContent = () => {
       }
     });
 
-    state.priceRange.forEach((range) => {
-      switch (range) {
-        case 'До 1000 ₽':
-          params.append('price', '0-1000');
-          break;
-        case '1000-3000 ₽':
-          params.append('price', '1000-3000');
-          break;
-        case '3000-5000 ₽':
-          params.append('price', '3000-5000');
-          break;
-        case 'Больше 5000 ₽':
-          params.append('price', '5000-');
-          break;
-        default:
-          break;
-      }
-    });
+    if (
+      state.priceRange.length === 2 &&
+      (state.priceRange[0] > 0 || state.priceRange[1] < 10000)
+    ) {
+      params.append('price', `${state.priceRange[0]}-${state.priceRange[1]}`);
+    }
+
+    params.append('page', state.currentPage);
+    params.append('pageSize', 20);
 
     return params.toString();
   }, [
@@ -196,17 +302,18 @@ const ShopContent = () => {
     state.sort,
     state.filters,
     state.priceRange,
+    state.currentPage,
   ]);
 
   const fetchProducts = useCallback(
-    debounce(async (params) => {
+    debounce(async (params, signal) => {
       if (state.isInitialLoad) {
         setState((prev) => ({ ...prev, loading: true, error: null }));
       }
       try {
-        const encodedParams = encodeURI(params);
         const response = await fetch(
-          `http://localhost:3000/api/products?${encodedParams}`
+          `http://localhost:3000/api/products?${params}`,
+          { signal }
         );
 
         if (!response.ok) {
@@ -216,42 +323,56 @@ const ShopContent = () => {
         const data = await response.json();
         setState((prev) => ({
           ...prev,
-          products: data,
+          products: data.products,
+          totalPages: data.totalPages,
           loading: false,
           error: null,
           isInitialLoad: false,
         }));
       } catch (err) {
-        setState((prev) => ({
-          ...prev,
-          error: `Ошибка загрузки: ${err.message}. Попробуйте обновить страницу`,
-          products: [],
-          loading: false,
-          isInitialLoad: false,
-        }));
+        if (err.name !== 'AbortError') {
+          setState((prev) => ({
+            ...prev,
+            error: `Ошибка загрузки: ${err.message}. Попробуйте обновить страницу`,
+            products: [],
+            loading: false,
+            isInitialLoad: false,
+          }));
+        }
       }
-    }, 500),
+    }, 300),
     [state.isInitialLoad]
   );
 
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+
     const params = buildQueryParams;
-    fetchProducts(params);
+    fetchProducts(params, signal);
+
+    return () => controller.abort();
   }, [buildQueryParams, fetchProducts]);
 
-  const handleFilterChange = (filterType, values) => {
+  const handleFilterChange = useCallback((filterType, values) => {
     setState((prev) => ({
       ...prev,
       filters: { ...prev.filters, [filterType]: values },
+      currentPage: 1,
     }));
-  };
+  }, []);
 
-  const handlePriceChange = (values) => {
-    setState((prev) => ({ ...prev, priceRange: values }));
+  const handlePriceApply = () => {
+    setState((prev) => ({
+      ...prev,
+      priceRange: tempPriceRange,
+      currentPage: 1,
+    }));
+    setVisiblePriceDropdown(false);
   };
 
   const handleSortChange = (value) => {
-    setState((prev) => ({ ...prev, sort: value }));
+    setState((prev) => ({ ...prev, sort: value, currentPage: 1 }));
   };
 
   const clearFilters = () => {
@@ -259,22 +380,24 @@ const ShopContent = () => {
       ...prev,
       selectedCategory: null,
       selectedSubcategory: null,
-      filters: {
-        material: [],
-        color: [],
-        size: [],
-        brand: [],
-        country: [],
-      },
-      priceRange: [],
+      filters: { material: [], color: [], size: [], brand: [], country: [] },
+      priceRange: [0, 10000],
       onlyWithDiscount: false,
       sort: null,
+      currentPage: 1,
     }));
+    setVisibleDropdown(null);
+    setVisiblePriceDropdown(false);
+  };
+
+  const handlePageChange = (newPage) => {
+    setState((prev) => ({ ...prev, currentPage: newPage }));
   };
 
   const hasActiveFilters =
     Object.values(state.filters).some((v) => v.length > 0) ||
-    state.priceRange.length > 0 ||
+    state.priceRange[0] > 0 ||
+    state.priceRange[1] < 10000 ||
     state.onlyWithDiscount ||
     state.selectedCategory ||
     state.selectedSubcategory;
@@ -302,30 +425,50 @@ const ShopContent = () => {
     },
   };
 
-  const renderClearButton = (onClear, disabled) => (
+  const priceDropdownMenu = (
     <div
       style={{
-        padding: '8px 12px',
-        borderTop: `1px solid ${antTheme.token.colorBorder}`,
-        position: 'sticky',
-        bottom: 0,
-        zIndex: 1,
+        padding: 16,
+        background: antTheme.token.colorBgContainer,
+        width: 300,
       }}
     >
-      <Button
-        type="link"
-        danger
-        size="small"
-        onClick={onClear}
-        disabled={disabled}
-        style={{
-          width: '100%',
-          textAlign: 'right',
-          paddingRight: 0,
-        }}
-      >
-        Очистить
-      </Button>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Text style={{ color: textColor }}>Цена</Text>
+        <Slider
+          range
+          min={0}
+          max={10000}
+          value={tempPriceRange}
+          onChange={(value) => setTempPriceRange(value)}
+        />
+        <Space>
+          <InputNumber
+            min={0}
+            max={10000}
+            value={tempPriceRange[0]}
+            onChange={(value) =>
+              setTempPriceRange([value || 0, tempPriceRange[1]])
+            }
+          />
+          <Text style={{ color: textColor }}>до</Text>
+          <InputNumber
+            min={0}
+            max={10000}
+            value={tempPriceRange[1]}
+            onChange={(value) =>
+              setTempPriceRange([tempPriceRange[0], value || 0])
+            }
+          />
+        </Space>
+        <Button
+          type="primary"
+          onClick={handlePriceApply}
+          style={{ width: '100%' }}
+        >
+          Применить
+        </Button>
+      </Space>
     </div>
   );
 
@@ -336,10 +479,7 @@ const ShopContent = () => {
         <Empty
           description="Товаров не найдено"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          imageStyle={{
-            height: 60,
-            filter: isDarkMode ? 'invert(1)' : 'none',
-          }}
+          imageStyle={{ height: 60, filter: isDarkMode ? 'invert(1)' : 'none' }}
         />
       )}
     >
@@ -356,20 +496,13 @@ const ShopContent = () => {
           <div style={{ padding: '24px 16px' }}>
             <Title
               level={4}
-              style={{
-                color: textColor,
-                marginBottom: 24,
-                paddingLeft: 8,
-              }}
+              style={{ color: textColor, marginBottom: 24, paddingLeft: 8 }}
             >
               Категории
             </Title>
             <Menu
               mode="inline"
-              style={{
-                background: 'transparent',
-                borderRight: 0,
-              }}
+              style={{ background: 'transparent', borderRight: 0 }}
               selectedKeys={[state.selectedCategory, state.selectedSubcategory]}
             >
               {categories.map((category) => (
@@ -397,6 +530,7 @@ const ShopContent = () => {
                           ? null
                           : category.title,
                       selectedSubcategory: null,
+                      currentPage: 1,
                     }))
                   }
                 >
@@ -408,6 +542,7 @@ const ShopContent = () => {
                           ...prev,
                           selectedSubcategory:
                             prev.selectedSubcategory === sub ? null : sub,
+                          currentPage: 1,
                         }))
                       }
                       style={{
@@ -482,6 +617,10 @@ const ShopContent = () => {
             {Object.entries(filterOptions.filters).map(([key, values]) => (
               <Dropdown
                 key={key}
+                visible={visibleDropdown === key}
+                onVisibleChange={(visible) =>
+                  setVisibleDropdown(visible ? key : null)
+                }
                 menu={{
                   items: [
                     ...values.map((value) => ({
@@ -511,10 +650,15 @@ const ShopContent = () => {
                       ),
                     })),
                     {
-                      key: 'clear',
-                      label: renderClearButton(
-                        () => handleFilterChange(key, []),
-                        state.filters[key].length === 0
+                      key: 'apply',
+                      label: (
+                        <Button
+                          type="primary"
+                          onClick={() => setVisibleDropdown(null)}
+                          style={{ width: '100%', marginTop: 8 }}
+                        >
+                          Применить
+                        </Button>
                       ),
                     },
                   ],
@@ -531,48 +675,18 @@ const ShopContent = () => {
             ))}
 
             <Dropdown
-              menu={{
-                items: [
-                  ...filterOptions.priceRanges.map((range) => ({
-                    key: range,
-                    label: (
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          transition: 'background 0.3s',
-                        }}
-                        onClick={() => {
-                          const newValues = state.priceRange.includes(range)
-                            ? state.priceRange.filter((r) => r !== range)
-                            : [...state.priceRange, range];
-                          handlePriceChange(newValues);
-                        }}
-                      >
-                        <Checkbox
-                          checked={state.priceRange.includes(range)}
-                          style={{ pointerEvents: 'none' }}
-                        />
-                        <span style={{ marginLeft: 12 }}>{range}</span>
-                      </div>
-                    ),
-                  })),
-                  {
-                    key: 'clear',
-                    label: renderClearButton(
-                      () => handlePriceChange([]),
-                      state.priceRange.length === 0
-                    ),
-                  },
-                ],
+              visible={visiblePriceDropdown}
+              onVisibleChange={(visible) => {
+                setVisiblePriceDropdown(visible);
+                if (visible) setTempPriceRange(state.priceRange);
               }}
+              dropdownRender={() => priceDropdownMenu}
               trigger={['click']}
             >
               <Button style={{ minWidth: 120, maxWidth: 200 }}>
-                {filterLabels.price}
-                {state.priceRange.length > 0 && ` (${state.priceRange.length})`}
+                Цена
+                {(state.priceRange[0] > 0 || state.priceRange[1] < 10000) &&
+                  ` (${state.priceRange[0]} - ${state.priceRange[1]})`}
                 <DownOutlined style={{ marginLeft: 12 }} />
               </Button>
             </Dropdown>
@@ -594,13 +708,14 @@ const ShopContent = () => {
                   setState((prev) => ({
                     ...prev,
                     onlyWithDiscount: checked,
+                    currentPage: 1,
                   }))
                 }
               />
             </div>
 
             {hasActiveFilters && (
-              <Button onClick={clearFilters} danger style={{}}>
+              <Button onClick={clearFilters} danger>
                 Сбросить всё
               </Button>
             )}
@@ -636,118 +751,52 @@ const ShopContent = () => {
               />
             </div>
           ) : (
-            <Row gutter={[24, 24]} justify="start">
-              {state.products.map((product) => (
-                <Col
-                  key={product.id}
-                  xs={24}
-                  sm={12}
-                  md={8}
-                  lg={6}
-                  xl={4}
-                  xxl={3}
-                >
-                  <Card
-                    hoverable
-                    style={{
-                      height: '100%',
-                      border: `1px solid ${antTheme.token.colorBorder}`,
-                    }}
-                    cover={
-                      <div
-                        style={{
-                          height: 320,
-                          position: 'relative',
-                          background: `url(${
-                            product.image || '/placeholder.jpg'
-                          }) center/cover no-repeat`,
-                        }}
-                      >
-                        {product.discount && (
-                          <div
-                            style={{
-                              position: 'absolute',
-                              top: 12,
-                              right: 12,
-                              backgroundColor: '#ff4d4f',
-                              color: '#fff',
-                              padding: '4px 10px',
-                              borderRadius: 4,
-                              fontSize: 12,
-                              fontWeight: 600,
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                            }}
-                          >
-                            {product.discount}
-                          </div>
-                        )}
-                      </div>
-                    }
-                    bodyStyle={{
-                      padding: 16,
-                      background: antTheme.token.colorBgContainer,
-                    }}
+            <>
+              <Row gutter={[24, 24]} justify="start">
+                {state.products.map((product) => (
+                  <Col
+                    key={product.id}
+                    xs={24}
+                    sm={12}
+                    md={8}
+                    lg={6}
+                    xl={4}
+                    xxl={3}
                   >
-                    <div style={{ minHeight: 110 }}>
-                      <Title
-                        level={5}
-                        style={{
-                          fontSize: 15,
-                          marginBottom: 8,
-                          color: textColor,
-                        }}
-                        ellipsis={{ rows: 2 }}
-                      >
-                        {product.name}
-                      </Title>
+                    <ProductCard
+                      product={product}
+                      textColor={textColor}
+                      antTheme={antTheme}
+                    />
+                  </Col>
+                ))}
+              </Row>
 
-                      <div style={{ marginBottom: 12 }}>
-                        {product.rating && (
-                          <Text
-                            style={{
-                              color: '#faad14',
-                              marginRight: 8,
-                              fontSize: 14,
-                            }}
-                          >
-                            ★{product.rating.toFixed(1)}
-                          </Text>
-                        )}
-                        {product.reviews > 0 && (
-                          <Text type="secondary" style={{ fontSize: 12 }}>
-                            ({product.reviews} отзывов)
-                          </Text>
-                        )}
-                      </div>
-
-                      <div>
-                        {product.oldPrice > 0 && (
-                          <Text
-                            delete
-                            style={{
-                              color: '#8c8c8c',
-                              marginRight: 8,
-                              fontSize: 12,
-                            }}
-                          >
-                            {product.oldPrice.toLocaleString()}₽
-                          </Text>
-                        )}
-                        <Text
-                          style={{
-                            color: '#cf1322',
-                            fontWeight: 600,
-                            fontSize: 16,
-                          }}
-                        >
-                          {product.price.toLocaleString()}₽
-                        </Text>
-                      </div>
-                    </div>
-                  </Card>
-                </Col>
-              ))}
-            </Row>
+              <div
+                style={{
+                  marginTop: 24,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  gap: 8,
+                }}
+              >
+                <Button
+                  onClick={() => handlePageChange(state.currentPage - 1)}
+                  disabled={state.currentPage === 1}
+                >
+                  Назад
+                </Button>
+                <span style={{ color: textColor, padding: '8px 16px' }}>
+                  Страница {state.currentPage} из {state.totalPages}
+                </span>
+                <Button
+                  onClick={() => handlePageChange(state.currentPage + 1)}
+                  disabled={state.currentPage >= state.totalPages}
+                >
+                  Вперед
+                </Button>
+              </div>
+            </>
           )}
         </Content>
       </Layout>

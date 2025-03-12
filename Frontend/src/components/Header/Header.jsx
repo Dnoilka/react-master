@@ -1,22 +1,29 @@
 import React, { useContext, useState } from 'react';
 import { Layout, Menu, Input, Button, Badge } from 'antd';
-import { SearchOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import {
+  SearchOutlined,
+  ShoppingCartOutlined,
+  HeartOutlined,
+} from '@ant-design/icons';
 import { ThemeContext } from '../Sider/ThemeContext';
+import { WishlistContext } from './WishlistContext';
+import { CartContext } from './CartContext';
 import { useNavigate } from 'react-router-dom';
 import LogoBlack from '../../../assets/images/LogoBlack.png';
 import LogoWhite from '../../../assets/images/LogoWhite.png';
 
 export default function Header() {
   const { theme } = useContext(ThemeContext);
+  const { wishlist } = useContext(WishlistContext);
+  const { cartCount } = useContext(CartContext);
   const [selectedKey, setSelectedKey] = useState('1');
   const [isCartHovered, setIsCartHovered] = useState(false);
-  const [cartItemsCount] = useState(3);
+  const [isWishlistHovered, setIsWishlistHovered] = useState(false);
   const navigate = useNavigate();
 
   const handleMenuClick = (e) => {
     const item = e.key;
     const params = new URLSearchParams();
-
     const mappings = {
       Новинки: { sortBy: 'Новинки' },
       Одежда: { category: 'Одежда' },
@@ -24,13 +31,11 @@ export default function Header() {
       Аксессуары: { category: 'Аксессуары' },
       'SALE%': { discount: 'true' },
     };
-
     if (mappings[item]) {
       Object.entries(mappings[item]).forEach(([key, value]) =>
         params.set(key, encodeURIComponent(value))
       );
     }
-
     navigate(`/shop?${params.toString()}`);
     setSelectedKey(item);
   };
@@ -112,7 +117,6 @@ export default function Header() {
                 height: 80,
                 display: 'flex',
                 alignItems: 'center',
-
                 margin: '0 8px',
                 color:
                   item === 'SALE%'
@@ -163,7 +167,32 @@ export default function Header() {
             allowClear
           />
 
-          <Badge count={cartItemsCount} offset={[-8, 8]} color="#e74c3c">
+          <Badge count={wishlist.length} offset={[-8, 8]} color="#ff4d4f">
+            <Button
+              type="text"
+              icon={<HeartOutlined style={{ fontSize: 24 }} />}
+              style={{
+                height: 48,
+                display: 'flex',
+                alignItems: 'center',
+                color: isWishlistHovered
+                  ? theme === 'dark'
+                    ? '#40a9ff'
+                    : '#1890ff'
+                  : theme === 'dark'
+                  ? '#ffffff'
+                  : '#2d3436',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={() => setIsWishlistHovered(true)}
+              onMouseLeave={() => setIsWishlistHovered(false)}
+              onClick={() => navigate('/wishlist')}
+            >
+              <span style={{ marginLeft: 8 }}>Вишлист</span>
+            </Button>
+          </Badge>
+
+          <Badge count={cartCount} offset={[-8, 8]} color="#e74c3c">
             <Button
               type="text"
               icon={<ShoppingCartOutlined style={{ fontSize: 24 }} />}

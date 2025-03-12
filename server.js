@@ -12,12 +12,13 @@ const cors = require('cors');
 const passport = require('passport');
 const multer = require('multer');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const NodeCache = require('node-cache');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const saltRounds = 10;
+const productCache = new NodeCache({ stdTTL: 300 });
 
-// Настройка хранилища для загрузки файлов
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, 'uploads/');
@@ -42,10 +43,8 @@ const upload = multer({
   },
 });
 
-// Настройка Passport
 app.use(passport.initialize());
 
-// Google OAuth Strategy
 passport.use(
   new GoogleStrategy(
     {
@@ -66,7 +65,7 @@ passport.use(
 
           if (!user) {
             db.run(
-              'INSERT INTO users (email, patronymic, surname , name, isVerified, authMethod) VALUES (?, ?, TRUE, "google")',
+              'INSERT INTO users (email, name, isVerified, authMethod) VALUES (?, ?, TRUE, "google")',
               [profile.emails[0].value, profile.displayName],
               function (err) {
                 if (err) return done(err);
@@ -75,8 +74,6 @@ passport.use(
                   id: this.lastID,
                   email: profile.emails[0].value,
                   name: profile.displayName,
-                  surname: profile.displayName,
-                  patronymic: profile.name.display,
                   isVerified: true,
                   authMethod: 'google',
                 };
@@ -103,7 +100,6 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 const dbFilePath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbFilePath);
 
-// Инициализация базы данных
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS products (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -139,6 +135,26 @@ db.serialize(() => {
     authMethod TEXT,
     createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS wishlist (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (product_id) REFERENCES products(id),
+    UNIQUE(user_id, product_id)
+  )`);
+
+  db.run('CREATE INDEX IF NOT EXISTS idx_category ON products(category)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_subcategory ON products(subcategory)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_price ON products(price)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_discount ON products(discount)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_brand ON products(brand)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_material ON products(material)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_color ON products(color)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_country ON products(country)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_created_at ON products(created_at)');
 
   db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
     if (err) return console.error('Ошибка при проверке продуктов:', err);
@@ -190,8 +206,8 @@ db.serialize(() => {
           product.category,
           product.subcategory,
           product.price,
-          product.oldPrice,
-          product.discount,
+          product.oldPrice || 0,
+          product.discount || '',
           product.image,
           product.brand,
           product.material,
@@ -209,61 +225,6 @@ db.serialize(() => {
   });
 });
 
-const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
-
-function loadPromoCodes() {
-  try {
-    return fs.existsSync(promoCodesFile)
-      ? JSON.parse(fs.readFileSync(promoCodesFile))
-      : {};
-  } catch (e) {
-    return {};
-  }
-}
-
-function savePromoCodes(promoCodes) {
-  fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
-}
-
-const promoCodes = loadPromoCodes();
-
-function generatePromoCode() {
-  return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
-}
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Генерация JWT токена
-const generateAuthToken = (user) => {
-  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-    expiresIn: '1d',
-  });
-};
-
-// Middleware аутентификации
-const authenticateJWT = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-      if (err) return res.sendStatus(403);
-      req.user = user;
-      next();
-    });
-  } else {
-    res.sendStatus(401);
-  }
-};
-
-// Маршруты аутентификации
 app.post('/api/register', async (req, res) => {
   const { name, surname, patronymic, email, password } = req.body;
 
@@ -284,8 +245,8 @@ app.post('/api/register', async (req, res) => {
     const verificationToken = crypto.randomBytes(20).toString('hex');
 
     db.run(
-      `INSERT INTO users (email, password,patronymic, surname, name, verificationToken, authMethod) 
-       VALUES (?, ?, ?, ?, "email")`,
+      `INSERT INTO users (email, password, patronymic, surname, name, verificationToken, authMethod) 
+       VALUES (?, ?, ?, ?, ?, ?, "email")`,
       [email, hashedPassword, patronymic, surname, name, verificationToken],
       function (err) {
         if (err) {
@@ -455,7 +416,6 @@ app.get('/api/verify-token', authenticateJWT, (req, res) => {
   });
 });
 
-// Google OAuth Routes
 app.get(
   '/api/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
@@ -471,8 +431,14 @@ app.get(
   }
 );
 
-// Маршруты продуктов
 app.get('/api/products', (req, res) => {
+  const cacheKey = JSON.stringify(req.query);
+  const cachedData = productCache.get(cacheKey);
+
+  if (cachedData) {
+    return res.json(cachedData);
+  }
+
   const {
     category,
     subcategory,
@@ -485,9 +451,13 @@ app.get('/api/products', (req, res) => {
     price,
     sortBy,
     search,
+    page = 1,
+    pageSize = 20,
   } = req.query;
 
-  let query = `SELECT * FROM products WHERE 1=1`;
+  const offset = (page - 1) * pageSize;
+
+  let query = `SELECT *, COUNT(*) OVER() AS total_count FROM products WHERE 1=1`;
   const params = [];
 
   if (category) {
@@ -529,8 +499,8 @@ app.get('/api/products', (req, res) => {
   }
 
   if (size) {
-    query += ` AND sizes LIKE ?`;
-    params.push(`%${size}%`);
+    query += ` AND sizes GLOB ?`;
+    params.push(`*${size}*`);
   }
 
   if (country) {
@@ -576,10 +546,7 @@ app.get('/api/products', (req, res) => {
     const decodedSortBy = decodeURIComponent(sortBy);
     switch (decodedSortBy) {
       case 'Новинки':
-        query += ` ORDER BY 
-          CASE WHEN created_at IS NOT NULL THEN created_at 
-               ELSE '1970-01-01' 
-          END DESC`;
+        query += ` ORDER BY created_at DESC`;
         break;
       case 'Сначала дороже':
         query += ' ORDER BY price DESC';
@@ -599,21 +566,86 @@ app.get('/api/products', (req, res) => {
     }
   }
 
+  query += ` LIMIT ? OFFSET ?`;
+  params.push(pageSize, offset);
+
   db.all(query, params, (err, rows) => {
     if (err) {
       console.error('Ошибка базы данных:', err);
       return res.status(500).json({ error: 'Ошибка базы данных' });
     }
 
-    const processed = rows.map((row) => ({
+    const totalCount = rows.length > 0 ? rows[0].total_count : 0;
+    const totalPages = Math.ceil(totalCount / pageSize);
+
+    const processed = {
+      products: rows.map((row) => ({
+        ...row,
+        rating: parseFloat(row.rating) || 0,
+        reviews: parseInt(row.reviews) || 0,
+        sizes: row.sizes ? row.sizes.split(',') : [],
+        discount: row.discount || null,
+      })),
+      totalPages,
+    };
+
+    productCache.set(cacheKey, processed);
+    res.json(processed);
+  });
+});
+
+app.post('/api/wishlist', authenticateJWT, (req, res) => {
+  const { productId } = req.body;
+  const userId = req.user.id;
+  db.run(
+    'INSERT OR IGNORE INTO wishlist (user_id, product_id) VALUES (?, ?)',
+    [userId, productId],
+    function (err) {
+      if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.get('/api/wishlist', authenticateJWT, (req, res) => {
+  const userId = req.user.id;
+  db.all(
+    'SELECT product_id FROM wishlist WHERE user_id = ?',
+    [userId],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
+      const productIds = rows.map((row) => row.product_id);
+      res.json(productIds);
+    }
+  );
+});
+
+app.delete('/api/wishlist/:id', authenticateJWT, (req, res) => {
+  const productId = req.params.id;
+  const userId = req.user.id;
+  db.run(
+    'DELETE FROM wishlist WHERE user_id = ? AND product_id = ?',
+    [userId, productId],
+    function (err) {
+      if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
+      res.json({ success: true });
+    }
+  );
+});
+
+app.get('/api/products/:id', (req, res) => {
+  const { id } = req.params;
+  db.get('SELECT * FROM products WHERE id = ?', [id], (err, row) => {
+    if (err || !row) {
+      return res.status(404).json({ error: 'Товар не найден' });
+    }
+    res.json({
       ...row,
       rating: parseFloat(row.rating) || 0,
       reviews: parseInt(row.reviews) || 0,
       sizes: row.sizes ? row.sizes.split(',') : [],
       discount: row.discount || null,
-    }));
-
-    res.json(processed);
+    });
   });
 });
 
@@ -623,6 +655,8 @@ app.post('/subscribe', async (req, res) => {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return res.status(400).json({ message: 'Некорректный email' });
   }
+
+  const promoCodes = loadPromoCodes();
 
   if (promoCodes[email]) {
     return res.json({
@@ -653,7 +687,6 @@ app.post('/subscribe', async (req, res) => {
   }
 });
 
-// Эндпоинт для загрузки аватара
 app.post(
   '/api/upload-avatar',
   authenticateJWT,
@@ -698,7 +731,56 @@ app.post(
   }
 );
 
-// Обработка всех остальных запросов
+function generateAuthToken(user) {
+  return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
+    expiresIn: '1d',
+  });
+}
+
+function authenticateJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+      if (err) return res.sendStatus(403);
+      req.user = user;
+      next();
+    });
+  } else {
+    res.sendStatus(401);
+  }
+}
+
+function loadPromoCodes() {
+  const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
+  try {
+    return fs.existsSync(promoCodesFile)
+      ? JSON.parse(fs.readFileSync(promoCodesFile))
+      : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function savePromoCodes(promoCodes) {
+  const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
+  fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
+}
+
+function generatePromoCode() {
+  return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
+}
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 app.get('*', (req, res) => {
   res.sendFile(
     path.resolve(__dirname, 'frontend', 'dist', 'index.html'),
