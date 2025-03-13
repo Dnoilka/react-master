@@ -453,11 +453,12 @@ app.get('/api/products', (req, res) => {
     search,
     page = 1,
     pageSize = 20,
+    sort, // Новый параметр для сортировки
+    min_reviews, // Новый параметр для фильтрации по минимальному количеству отзывов
+    limit, // Новый параметр для ограничения количества товаров
   } = req.query;
 
-  const offset = (page - 1) * pageSize;
-
-  let query = `SELECT *, COUNT(*) OVER() AS total_count FROM products WHERE 1=1`;
+  let query = `SELECT * FROM products WHERE 1=1`;
   const params = [];
 
   if (category) {
@@ -542,7 +543,23 @@ app.get('/api/products', (req, res) => {
     params.push(`%${decodeURIComponent(search)}%`);
   }
 
-  if (sortBy) {
+  if (min_reviews) {
+    query += ` AND reviews >= ?`;
+    params.push(parseInt(min_reviews));
+  }
+
+  if (sort) {
+    switch (sort) {
+      case 'random':
+        query += ' ORDER BY RANDOM()';
+        break;
+      case 'reviews_desc':
+        query += ' ORDER BY reviews DESC';
+        break;
+      default:
+        query += ' ORDER BY created_at DESC';
+    }
+  } else if (sortBy) {
     const decodedSortBy = decodeURIComponent(sortBy);
     switch (decodedSortBy) {
       case 'Новинки':
@@ -566,8 +583,15 @@ app.get('/api/products', (req, res) => {
     }
   }
 
-  query += ` LIMIT ? OFFSET ?`;
-  params.push(pageSize, offset);
+  if (limit) {
+    const limitValue = parseInt(limit);
+    query += ` LIMIT ?`;
+    params.push(limitValue);
+  } else {
+    const offset = (page - 1) * pageSize;
+    query += ` LIMIT ? OFFSET ?`;
+    params.push(pageSize, offset);
+  }
 
   db.all(query, params, (err, rows) => {
     if (err) {
@@ -575,8 +599,8 @@ app.get('/api/products', (req, res) => {
       return res.status(500).json({ error: 'Ошибка базы данных' });
     }
 
-    const totalCount = rows.length > 0 ? rows[0].total_count : 0;
-    const totalPages = Math.ceil(totalCount / pageSize);
+    const totalCount = limit ? rows.length : rows[0]?.total_count || 0;
+    const totalPages = limit ? 1 : Math.ceil(totalCount / pageSize);
 
     const processed = {
       products: rows.map((row) => ({

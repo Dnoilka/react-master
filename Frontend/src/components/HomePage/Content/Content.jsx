@@ -1,118 +1,86 @@
-import { React, useContext } from 'react';
-import { Layout, Row, Col, Card, Button, Typography, Switch } from 'antd';
+import React, { useContext, useState, useEffect } from 'react';
+import { Layout, Row, Col, Typography, Button } from 'antd';
 import { ThemeContext } from '../../Sider/ThemeContext';
+import ProductCard from '../../ShopPage/Content/ProductCard'; // Импорт ProductCard
+import { Link } from 'react-router-dom';
 
 const { Content } = Layout;
 const { Title, Paragraph } = Typography;
 
 const ContentComponent = () => {
-  const { theme, toggleTheme } = useContext(ThemeContext);
-
-  const recommendedProducts = [
-    {
-      id: 1,
-      name: 'Товар 1',
-      price: '5000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 2,
-      name: 'Товар 2',
-      price: '10000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 3,
-      name: 'Товар 3',
-      price: '15000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-  ];
-
-  const bigPopularProducts = [
-    {
-      id: 1,
-      name: 'Большой товар 1',
-      price: '5000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 2,
-      name: 'Большой товар 2',
-      price: '10000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 3,
-      name: 'Большой товар 3',
-      price: '15000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 4,
-      name: 'Большой товар 4',
-      price: '20000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-  ];
-
-  const popularProducts = [
-    {
-      id: 1,
-      name: 'Популярный товар 1',
-      price: '5000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 2,
-      name: 'Популярный товар 2',
-      price: '10000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 3,
-      name: 'Популярный товар 3',
-      price: '15000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 4,
-      name: 'Популярный товар 4',
-      price: '20000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 5,
-      name: 'Популярный товар 5',
-      price: '20000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 6,
-      name: 'Популярный товар 6',
-      price: '20000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 7,
-      name: 'Популярный товар 7',
-      price: '20000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-    {
-      id: 8,
-      name: 'Популярный товар 8',
-      price: '20000 рублей',
-      img: 'assets/images/popular1.jpg',
-    },
-  ];
-
+  const { theme } = useContext(ThemeContext);
   const isDarkMode = theme === 'dark';
   const backgroundColor = isDarkMode ? '#12172a' : '#ffffff';
-  const sectionBackgroundColor = isDarkMode ? '#333' : '#f4f4f4';
   const textColor = isDarkMode ? '#fff' : '#000';
-  const cardBackgroundColor = isDarkMode ? '#1a1a1a' : '#fff';
-  const priceColor = isDarkMode ? '#ccc' : '#000';
+
+  // Определение темы для Ant Design, аналогично ShopContent
+  const antTheme = {
+    token: {
+      colorBgContainer: isDarkMode ? '#1c2233' : '#fff',
+      colorText: textColor,
+      colorBorder: isDarkMode ? '#2d3746' : '#d9d9d9',
+      colorPrimary: '#1890ff',
+    },
+    components: {
+      Card: {
+        colorBgContainer: isDarkMode ? '#1c2233' : '#fff',
+        colorBorderSecondary: isDarkMode ? '#2d3746' : '#f0f0f0',
+      },
+    },
+  };
+
+  // Состояния для хранения товаров
+  const [recommendedProducts, setRecommendedProducts] = useState([]);
+  const [bigPopularProducts, setBigPopularProducts] = useState([]);
+  const [popularProducts, setPopularProducts] = useState([]);
+
+  // Загрузка данных с сервера при монтировании компонента
+  useEffect(() => {
+    const fetchRecommended = async () => {
+      try {
+        const response = await fetch(
+          'http://localhost:3000/api/products?sort=random&limit=3'
+        );
+        const data = await response.json();
+        setRecommendedProducts(data.products);
+      } catch (error) {
+        console.error('Ошибка загрузки рекомендуемых товаров:', error);
+      }
+    };
+
+    const fetchBigPopular = async () => {
+      try {
+        const response = await fetch(
+          'http://localhost:3000/api/products?sort=reviews_desc&limit=4'
+        );
+        const data = await response.json();
+        // Перемешиваем на клиенте для случайного порядка
+        const shuffled = data.products.sort(() => 0.5 - Math.random());
+        setBigPopularProducts(shuffled);
+      } catch (error) {
+        console.error(
+          'Ошибка загрузки товаров с наибольшей популярностью:',
+          error
+        );
+      }
+    };
+
+    const fetchPopular = async () => {
+      try {
+        const response = await fetch(
+          'http://localhost:3000/api/products?min_reviews=10&sort=random&limit=8'
+        );
+        const data = await response.json();
+        setPopularProducts(data.products);
+      } catch (error) {
+        console.error('Ошибка загрузки популярных товаров:', error);
+      }
+    };
+
+    fetchRecommended();
+    fetchBigPopular();
+    fetchPopular();
+  }, []);
 
   return (
     <Layout
@@ -123,6 +91,7 @@ const ContentComponent = () => {
       }}
     >
       <Content style={{ padding: '0', overflow: 'hidden' }}>
+        {/* Основная секция */}
         <section
           style={{
             backgroundColor: isDarkMode ? '#12172a' : '#f0f0f0',
@@ -143,8 +112,7 @@ const ContentComponent = () => {
                 'repeating-linear-gradient(45deg, transparent, transparent 20px, #a87c53 20px, #a87c53 40px)',
               zIndex: 0,
             }}
-          ></div>
-
+          />
           <div
             style={{
               position: 'absolute',
@@ -157,8 +125,7 @@ const ContentComponent = () => {
                 : 'rgba(255, 255, 255, 0.7)',
               zIndex: 1,
             }}
-          ></div>
-
+          />
           <div
             style={{
               position: 'absolute',
@@ -184,28 +151,30 @@ const ContentComponent = () => {
             >
               Салон мужской одежды
             </Title>
-            <Button
-              type="primary"
-              size="large"
-              style={{
-                backgroundColor: '#eab676',
-                borderColor: '#eab676',
-                fontWeight: 'bold',
-                padding: '12px 24px',
-                color: isDarkMode ? '#000' : '#fff',
-                fontFamily: 'Sherif, serif',
-              }}
-              onClick={() => alert('За покупками!')}
-            >
-              За покупками
-            </Button>
+            <Link to="/shop">
+              <Button
+                type="primary"
+                size="large"
+                style={{
+                  backgroundColor: '#eab676',
+                  borderColor: '#eab676',
+                  fontWeight: 'bold',
+                  padding: '12px 24px',
+                  color: isDarkMode ? '#000' : '#fff',
+                  fontFamily: 'Sherif, serif',
+                }}
+              >
+                За покупками
+              </Button>
+            </Link>
           </div>
         </section>
 
+        {/* Секция "Рекомендуемые товары" */}
         <section
           style={{
             padding: '50px 0',
-            backgroundColor: sectionBackgroundColor,
+            backgroundColor: isDarkMode ? '#333' : '#f4f4f4',
             transition: 'background-color 0.3s ease',
           }}
         >
@@ -221,49 +190,20 @@ const ContentComponent = () => {
           >
             Рекомендуемые товары
           </Title>
-          <Row gutter={[16, 16]} justify="center">
+          <Row gutter={[24, 24]} justify="center">
             {recommendedProducts.map((product) => (
               <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
-                <Card
-                  hoverable
-                  style={{
-                    width: '100%',
-                    borderRadius: '10px',
-                    overflow: 'hidden',
-                    textAlign: 'center',
-                    backgroundColor: cardBackgroundColor,
-                    transition: 'background-color 0.3s ease',
-                  }}
-                  cover={
-                    <img
-                      alt={product.name}
-                      src={product.img}
-                      style={{ height: '200px', objectFit: 'cover' }}
-                    />
-                  }
-                >
-                  <Title
-                    level={4}
-                    style={{
-                      margin: 0,
-                      color: textColor,
-                      fontFamily: 'Playfair Display, serif',
-                    }}
-                  >
-                    {product.name}
-                  </Title>
-                  <p
-                    className="price"
-                    style={{ color: priceColor, fontFamily: 'Sherif, serif' }}
-                  >
-                    {product.price}
-                  </p>
-                </Card>
+                <ProductCard
+                  product={product}
+                  textColor={textColor}
+                  antTheme={antTheme}
+                />
               </Col>
             ))}
           </Row>
         </section>
 
+        {/* Секция со скидкой */}
         <section
           style={{
             backgroundColor: '#e9dacd',
@@ -275,11 +215,7 @@ const ContentComponent = () => {
             fontFamily: 'Playfair Display, serif',
           }}
         >
-          <div
-            style={{
-              maxWidth: '600px',
-            }}
-          >
+          <div style={{ maxWidth: '600px' }}>
             <Title
               level={1}
               style={{
@@ -309,24 +245,26 @@ const ContentComponent = () => {
             >
               Не пропустите
             </Paragraph>
-            <Button
-              type="default"
-              size="large"
-              style={{
-                padding: '10px 30px',
-                fontSize: '18px',
-                backgroundColor: 'transparent',
-                border: '2px solid #000',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease',
-              }}
-              onClick={() => alert('За покупками!')}
-            >
-              За покупками
-            </Button>
+            <Link to="/shop">
+              <Button
+                type="default"
+                size="large"
+                style={{
+                  padding: '10px 30px',
+                  fontSize: '18px',
+                  backgroundColor: 'transparent',
+                  border: '2px solid #000',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                За покупками
+              </Button>
+            </Link>
           </div>
         </section>
 
+        {/* Секция "С наибольшей популярностью" */}
         <section style={{ padding: '50px 0', paddingLeft: '10px' }}>
           <Title
             level={2}
@@ -340,51 +278,25 @@ const ContentComponent = () => {
           >
             С НАИБОЛЬШЕЙ ПОПУЛЯРНОСТЬЮ
           </Title>
-          <Row gutter={[16, 16]} justify="center">
+          <Row gutter={[24, 24]} justify="center">
             {bigPopularProducts.map((product) => (
               <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
-                <Card
-                  hoverable
-                  style={{
-                    width: '95%',
-                    borderRadius: '10px',
-                    overflow: 'hidden',
-                    textAlign: 'center',
-                    backgroundColor: cardBackgroundColor,
-                    transition: 'background-color 0.3s ease',
-                  }}
-                  cover={
-                    <img
-                      alt={product.name}
-                      src={product.img}
-                      style={{ height: '200px', objectFit: 'cover' }}
-                    />
-                  }
-                >
-                  <Title
-                    level={4}
-                    style={{
-                      margin: 0,
-                      color: textColor,
-                      fontFamily: 'Playfair Display, serif',
-                    }}
-                  >
-                    {product.name}
-                  </Title>
-                  <p className="price" style={{ color: priceColor }}>
-                    {product.price}
-                  </p>
-                </Card>
+                <ProductCard
+                  product={product}
+                  textColor={textColor}
+                  antTheme={antTheme}
+                />
               </Col>
             ))}
           </Row>
         </section>
 
+        {/* Секция "Популярные товары" */}
         <section
           style={{
             padding: '50px 0',
             paddingLeft: '10px',
-            backgroundColor: sectionBackgroundColor,
+            backgroundColor: isDarkMode ? '#333' : '#f4f4f4',
           }}
         >
           <Title
@@ -399,41 +311,14 @@ const ContentComponent = () => {
           >
             ПОПУЛЯРНЫЕ ТОВАРЫ
           </Title>
-          <Row gutter={[16, 16]} justify="center">
+          <Row gutter={[24, 24]} justify="center">
             {popularProducts.map((product) => (
               <Col xs={24} sm={12} md={8} lg={6} key={product.id}>
-                <Card
-                  hoverable
-                  style={{
-                    width: '95%',
-                    borderRadius: '10px',
-                    overflow: 'hidden',
-                    textAlign: 'center',
-                    backgroundColor: cardBackgroundColor,
-                    transition: 'background-color 0.3s ease',
-                  }}
-                  cover={
-                    <img
-                      alt={product.name}
-                      src={product.img}
-                      style={{ height: '200px', objectFit: 'cover' }}
-                    />
-                  }
-                >
-                  <Title
-                    level={4}
-                    style={{
-                      margin: 0,
-                      color: textColor,
-                      fontFamily: 'Playfair Display, serif',
-                    }}
-                  >
-                    {product.name}
-                  </Title>
-                  <p className="price" style={{ color: priceColor }}>
-                    {product.price}
-                  </p>
-                </Card>
+                <ProductCard
+                  product={product}
+                  textColor={textColor}
+                  antTheme={antTheme}
+                />
               </Col>
             ))}
           </Row>

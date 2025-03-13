@@ -1,43 +1,43 @@
-import React, { useState } from "react"
-import { Form, Input, Button, Alert, Typography } from "antd"
-import { useNavigate, useSearchParams } from "react-router-dom"
-import { Layout } from "antd"
-import Header from "../components/Header/Header"
-import Sider from "../components/Sider/Sider"
-import ThemeProvider from "../components/Sider/ThemeContext"
-import CustomFooter from "../components/Footer/Footer"
-const { Title } = Typography
+import React, { useState } from 'react';
+import { Form, Input, Button, Alert, Typography } from 'antd';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Layout } from 'antd';
+import Header from '../components/Header/Header';
+import Sider from '../components/Sider/Sider';
+import ThemeProvider from '../components/Sider/ThemeContext';
+import CustomFooter from '../components/Footer/Footer';
+const { Title } = Typography;
 
 const ResetPassword = () => {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
-  const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  const onFinish = async values => {
-    setLoading(true)
+  const onFinish = async (values) => {
+    setLoading(true);
     try {
-      const response = await fetch("/api/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          token: searchParams.get("token"),
+          token: searchParams.get('token'),
           password: values.password,
         }),
-      })
+      });
 
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error)
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error);
 
-      setSuccess(true)
-      setTimeout(() => navigate("/login"), 3000)
+      setSuccess(true);
+      setTimeout(() => navigate('/login'), 3000);
     } catch (err) {
-      setError(err.message)
+      setError(err.message);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <ThemeProvider>
@@ -45,8 +45,8 @@ const ResetPassword = () => {
         <Header />
         <Layout>
           <Sider />
-          <div style={{ maxWidth: 400, margin: "50px auto", padding: 20 }}>
-            <Title level={3} style={{ textAlign: "center", marginBottom: 30 }}>
+          <div style={{ maxWidth: 400, margin: '50px auto', padding: 20 }}>
+            <Title level={3} style={{ textAlign: 'center', marginBottom: 30 }}>
               Сброс пароля
             </Title>
 
@@ -72,11 +72,11 @@ const ResetPassword = () => {
                 name="password"
                 label="Новый пароль"
                 rules={[
-                  { required: true, message: "Введите новый пароль" },
-                  { min: 8, message: "Минимум 8 символов" },
+                  { required: true, message: 'Введите новый пароль' },
+                  { min: 8, message: 'Минимум 8 символов' },
                   {
                     pattern: /^(?=.*[A-Z])(?=.*\d).+/,
-                    message: "Должна быть заглавная буква и цифра",
+                    message: 'Должна быть заглавная буква и цифра',
                   },
                 ]}
               >
@@ -86,15 +86,15 @@ const ResetPassword = () => {
               <Form.Item
                 name="confirm"
                 label="Подтверждение пароля"
-                dependencies={["password"]}
+                dependencies={['password']}
                 rules={[
-                  { required: true, message: "Подтвердите пароль" },
+                  { required: true, message: 'Подтвердите пароль' },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
-                      if (!value || getFieldValue("password") === value) {
-                        return Promise.resolve()
+                      if (!value || getFieldValue('password') === value) {
+                        return Promise.resolve();
                       }
-                      return Promise.reject(new Error("Пароли не совпадают"))
+                      return Promise.reject(new Error('Пароли не совпадают'));
                     },
                   }),
                 ]}
@@ -118,7 +118,7 @@ const ResetPassword = () => {
         <CustomFooter />
       </Layout>
     </ThemeProvider>
-  )
-}
+  );
+};
 
-export default ResetPassword
+export default ResetPassword;
