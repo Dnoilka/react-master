@@ -1,4 +1,5 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { message } from 'antd';
 import { useUser } from '../Sider/UserContext';
 
 export const WishlistContext = createContext();
@@ -10,11 +11,19 @@ export const WishlistProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       fetch('/api/wishlist', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       })
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) throw new Error('Ошибка загрузки вишлиста');
+          return res.json();
+        })
         .then((data) => setWishlist(data))
-        .catch((err) => console.error(err));
+        .catch((err) => {
+          console.error('Ошибка:', err);
+          message.error('Не удалось загрузить вишлист');
+        });
     } else {
       setWishlist([]);
     }
@@ -22,7 +31,7 @@ export const WishlistProvider = ({ children }) => {
 
   const addToWishlist = async (productId) => {
     if (!user) {
-      alert('Пожалуйста, войдите в систему');
+      message.error('Пожалуйста, войдите в систему');
       return;
     }
     try {
@@ -34,11 +43,14 @@ export const WishlistProvider = ({ children }) => {
         },
         body: JSON.stringify({ productId }),
       });
-      if (response.ok) {
-        setWishlist((prev) => [...prev, productId]);
-      }
+
+      if (!response.ok) throw new Error('Ошибка сервера');
+
+      setWishlist((prev) => [...prev, productId]);
+      message.success('Добавлено в вишлист');
     } catch (err) {
-      console.error(err);
+      console.error('Ошибка:', err);
+      message.error('Не удалось добавить в вишлист');
     }
   };
 
@@ -46,21 +58,32 @@ export const WishlistProvider = ({ children }) => {
     try {
       const response = await fetch(`/api/wishlist/${productId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
       });
-      if (response.ok) {
-        setWishlist((prev) => prev.filter((id) => id !== productId));
-      }
+
+      if (!response.ok) throw new Error('Ошибка сервера');
+
+      setWishlist((prev) => prev.filter((id) => id !== productId));
+      message.success('Удалено из вишлиста');
     } catch (err) {
-      console.error(err);
+      console.error('Ошибка:', err);
+      message.error('Не удалось удалить из вишлиста');
     }
   };
 
   return (
     <WishlistContext.Provider
-      value={{ wishlist, addToWishlist, removeFromWishlist }}
+      value={{
+        wishlist,
+        addToWishlist,
+        removeFromWishlist,
+      }}
     >
       {children}
     </WishlistContext.Provider>
   );
 };
+
+export const useWishlist = () => useContext(WishlistContext);

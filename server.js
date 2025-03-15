@@ -109,10 +109,10 @@ db.serialize(() => {
     price INTEGER NOT NULL,
     oldPrice INTEGER DEFAULT 0,
     discount TEXT DEFAULT '',
-    image TEXT NOT NULL,
+    images TEXT NOT NULL,
     brand TEXT,
     material TEXT,
-    color TEXT,
+    colors TEXT,
     rating REAL DEFAULT 0,
     sizes TEXT,
     country TEXT,
@@ -152,7 +152,7 @@ db.serialize(() => {
   db.run('CREATE INDEX IF NOT EXISTS idx_discount ON products(discount)');
   db.run('CREATE INDEX IF NOT EXISTS idx_brand ON products(brand)');
   db.run('CREATE INDEX IF NOT EXISTS idx_material ON products(material)');
-  db.run('CREATE INDEX IF NOT EXISTS idx_color ON products(color)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_colors ON products(colors)');
   db.run('CREATE INDEX IF NOT EXISTS idx_country ON products(country)');
   db.run('CREATE INDEX IF NOT EXISTS idx_created_at ON products(created_at)');
 
@@ -166,11 +166,14 @@ db.serialize(() => {
           category: 'Одежда',
           subcategory: 'Брюки',
           price: 6000,
-          image:
-            'https://a.lmcdn.ru/img389x562/M/P/MP002XM0S8DI_13019465_1_v1_2x.jpg',
+          images: JSON.stringify([
+            'https://img0.happywear.ru/502x758/cache/goods/H/F/HF77111_%D1%87%D0%B5%D1%80%D0%BD%D1%8B%D0%B9_front.jpg',
+            'https://example.com/sport2.jpg',
+            'https://example.com/sport3.jpg',
+          ]),
           brand: 'Gucci',
           material: 'Хлопок',
-          color: 'Черный',
+          colors: 'Черный',
           rating: 4.5,
           sizes: 'S,M,L,XL',
           country: 'Италия',
@@ -183,11 +186,14 @@ db.serialize(() => {
           price: 7990,
           oldPrice: 9990,
           discount: '20%',
-          image:
+          images: JSON.stringify([
             'https://img0.happywear.ru/502x758/cache/goods/H/F/HF77111_%D1%87%D0%B5%D1%80%D0%BD%D1%8B%D0%B9_front.jpg',
+            'https://example.com/sport2.jpg',
+            'https://example.com/sport3.jpg',
+          ]),
           brand: 'Nike',
           material: 'Полиэстер',
-          color: 'Синий',
+          colors: 'Синий',
           rating: 4.8,
           sizes: 'M,L,XL',
           country: 'Китай',
@@ -197,7 +203,7 @@ db.serialize(() => {
 
       const stmt = db.prepare(`INSERT INTO products (
         name, category, subcategory, price, oldPrice, discount, 
-        image, brand, material, color, rating, sizes, country, reviews
+        images, brand, material, colors, rating, sizes, country, reviews
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
       products.forEach((product) => {
@@ -208,10 +214,10 @@ db.serialize(() => {
           product.price,
           product.oldPrice || 0,
           product.discount || '',
-          product.image,
+          product.images,
           product.brand,
           product.material,
-          product.color,
+          product.colors,
           product.rating,
           product.sizes,
           product.country,
@@ -445,7 +451,7 @@ app.get('/api/products', (req, res) => {
     discount,
     brand,
     material,
-    color,
+    colors,
     size,
     country,
     price,
@@ -453,9 +459,9 @@ app.get('/api/products', (req, res) => {
     search,
     page = 1,
     pageSize = 20,
-    sort, // Новый параметр для сортировки
-    min_reviews, // Новый параметр для фильтрации по минимальному количеству отзывов
-    limit, // Новый параметр для ограничения количества товаров
+    sort,
+    min_reviews,
+    limit,
   } = req.query;
 
   let query = `SELECT * FROM products WHERE 1=1`;
@@ -481,6 +487,7 @@ app.get('/api/products', (req, res) => {
       .map(() => '?')
       .join(',')})`;
     params.push(...brand.split(',').map(decodeURIComponent));
+    А;
   }
 
   if (material) {
@@ -491,12 +498,12 @@ app.get('/api/products', (req, res) => {
     params.push(...material.split(',').map(decodeURIComponent));
   }
 
-  if (color) {
-    query += ` AND color IN (${color
+  if (colors) {
+    query += ` AND color IN (${colors
       .split(',')
       .map(() => '?')
       .join(',')})`;
-    params.push(...color.split(',').map(decodeURIComponent));
+    params.push(...colors.split(',').map(decodeURIComponent));
   }
 
   if (size) {
@@ -605,6 +612,7 @@ app.get('/api/products', (req, res) => {
     const processed = {
       products: rows.map((row) => ({
         ...row,
+        images: JSON.parse(row.images),
         rating: parseFloat(row.rating) || 0,
         reviews: parseInt(row.reviews) || 0,
         sizes: row.sizes ? row.sizes.split(',') : [],
@@ -665,6 +673,7 @@ app.get('/api/products/:id', (req, res) => {
     }
     res.json({
       ...row,
+      images: JSON.parse(row.images),
       rating: parseFloat(row.rating) || 0,
       reviews: parseInt(row.reviews) || 0,
       sizes: row.sizes ? row.sizes.split(',') : [],

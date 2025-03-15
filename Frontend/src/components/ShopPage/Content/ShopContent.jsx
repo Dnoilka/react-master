@@ -69,7 +69,7 @@ const filterOptions = {
   sort: ['Новинки', 'Сначала дороже', 'Сначала дешевле', 'По величине скидки'],
   filters: {
     material: ['Хлопок', 'Шерсть', 'Кожа', 'Синтетика'],
-    color: ['Красный', 'Синий', 'Зеленый', 'Черный', 'Белый'],
+    colors: ['Красный', 'Синий', 'Зеленый', 'Черный', 'Белый'],
     size: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
     brand: ['Nike', 'Adidas', 'Puma', 'Reebok', 'Gucci'],
     country: ['Италия', 'Китай', 'Россия', 'Турция'],
@@ -78,7 +78,7 @@ const filterOptions = {
 
 const filterLabels = {
   material: 'Материалы',
-  color: 'Цвет',
+  colors: 'Цвет',
   size: 'Размер',
   brand: 'Бренд',
   country: 'Страна производства',
@@ -97,7 +97,7 @@ const ShopContent = () => {
     selectedSubcategory: null,
     filters: {
       material: [],
-      color: [],
+      colors: [],
       size: [],
       brand: [],
       country: [],
@@ -275,7 +275,7 @@ const ShopContent = () => {
       ...prev,
       selectedCategory: null,
       selectedSubcategory: null,
-      filters: { material: [], color: [], size: [], brand: [], country: [] },
+      filters: { material: [], colors: [], size: [], brand: [], country: [] },
       priceRange: [0, 10000],
       onlyWithDiscount: false,
       sort: null,
