@@ -4,7 +4,7 @@ import React, {
   useContext,
   useCallback,
   useMemo,
-} from 'react';
+} from "react"
 import {
   Layout,
   Menu,
@@ -23,73 +23,73 @@ import {
   Empty,
   Slider,
   InputNumber,
-} from 'antd';
-import { DownOutlined } from '@ant-design/icons';
-import { ThemeContext } from '../../Sider/ThemeContext';
-import { debounce } from 'lodash-es';
-import { useSearchParams } from 'react-router-dom';
-import ProductCard from './ProductCard';
+} from "antd"
+import { DownOutlined } from "@ant-design/icons"
+import { ThemeContext } from "../../Sider/ThemeContext"
+import { debounce } from "lodash-es"
+import { useSearchParams } from "react-router-dom"
+import ProductCard from "./ProductCard"
 
-const { Content, Sider } = Layout;
-const { Title, Text } = Typography;
+const { Content, Sider } = Layout
+const { Title, Text } = Typography
 
 const categories = [
   {
-    title: 'Одежда',
+    title: "Одежда",
     subcategories: [
-      'Брюки',
-      'Верхняя одежда',
-      'Джемперы, свитеры и кардиганы',
-      'Джинсы',
-      'Домашняя одежда',
-      'Комбинезоны',
-      'Майки',
-      'Нижнее белье',
+      "Брюки",
+      "Верхняя одежда",
+      "Джемперы, свитеры и кардиганы",
+      "Джинсы",
+      "Домашняя одежда",
+      "Комбинезоны",
+      "Майки",
+      "Нижнее белье",
     ],
   },
   {
-    title: 'Спорт',
-    subcategories: ['Поло', 'Спортивные костюмы'],
+    title: "Спорт",
+    subcategories: ["Поло", "Спортивные костюмы"],
   },
   {
-    title: 'Аксессуары',
-    subcategories: ['Запонки', 'Ремни'],
+    title: "Аксессуары",
+    subcategories: ["Запонки", "Ремни"],
   },
   {
-    title: 'Товары для дома',
-    subcategories: ['Постельное белье', 'Кухонные принадлежности'],
+    title: "Товары для дома",
+    subcategories: ["Постельное белье", "Кухонные принадлежности"],
   },
   {
-    title: 'Красота',
-    subcategories: ['Косметика', 'Парфюмерия'],
+    title: "Красота",
+    subcategories: ["Косметика", "Парфюмерия"],
   },
-];
+]
 
 const filterOptions = {
-  sort: ['Новинки', 'Сначала дороже', 'Сначала дешевле', 'По величине скидки'],
+  sort: ["Новинки", "Сначала дороже", "Сначала дешевле", "По величине скидки"],
   filters: {
-    material: ['Хлопок', 'Шерсть', 'Кожа', 'Синтетика'],
-    colors: ['Красный', 'Синий', 'Зеленый', 'Черный', 'Белый'],
-    size: ['S', 'M', 'L', 'XL', 'XXL', 'XXXL'],
-    brand: ['Nike', 'Adidas', 'Puma', 'Reebok', 'Gucci'],
-    country: ['Италия', 'Китай', 'Россия', 'Турция'],
+    material: ["Хлопок", "Шерсть", "Кожа", "Синтетика"],
+    color: ["Красный", "Синий", "Зеленый", "Черный", "Белый"],
+    size: ["S", "M", "L", "XL", "XXL", "XXXL"],
+    brand: ["Nike", "Adidas", "Puma", "Reebok", "Gucci"],
+    country: ["Италия", "Китай", "Россия", "Турция"],
   },
-};
+}
 
 const filterLabels = {
-  material: 'Материалы',
-  colors: 'Цвет',
-  size: 'Размер',
-  brand: 'Бренд',
-  country: 'Страна производства',
-};
+  material: "Материалы",
+  color: "Цвет",
+  size: "Размер",
+  brand: "Бренд",
+  country: "Страна производства",
+}
 
 const ShopContent = () => {
-  const { theme } = useContext(ThemeContext);
-  const [searchParams, setSearchParams] = useSearchParams();
-  const isDarkMode = theme === 'dark';
-  const textColor = isDarkMode ? '#fff' : '#000';
-  const backgroundColor = isDarkMode ? '#12172a' : '#f0f0f0';
+  const { theme } = useContext(ThemeContext)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const isDarkMode = theme === "dark"
+  const textColor = isDarkMode ? "#fff" : "#000"
+  const backgroundColor = isDarkMode ? "#12172a" : "#f0f0f0"
 
   const [state, setState] = useState({
     products: [],
@@ -97,7 +97,7 @@ const ShopContent = () => {
     selectedSubcategory: null,
     filters: {
       material: [],
-      colors: [],
+      color: [],
       size: [],
       brand: [],
       country: [],
@@ -110,41 +110,41 @@ const ShopContent = () => {
     isInitialLoad: true,
     currentPage: 1,
     totalPages: 1,
-  });
+  })
 
-  const [visibleDropdown, setVisibleDropdown] = useState(null);
-  const [visiblePriceDropdown, setVisiblePriceDropdown] = useState(false);
-  const [tempPriceRange, setTempPriceRange] = useState(state.priceRange);
+  const [visibleDropdown, setVisibleDropdown] = useState(null)
+  const [visiblePriceDropdown, setVisiblePriceDropdown] = useState(false)
+  const [tempPriceRange, setTempPriceRange] = useState(state.priceRange)
 
   useEffect(() => {
-    const category = searchParams.get('category');
-    const subcategory = searchParams.get('subcategory');
-    const discount = searchParams.get('discount') === 'true';
-    const sortBy = searchParams.get('sortBy');
-    const page = parseInt(searchParams.get('page')) || 1;
+    const category = searchParams.get("category")
+    const subcategory = searchParams.get("subcategory")
+    const discount = searchParams.get("discount") === "true"
+    const sortBy = searchParams.get("sortBy")
+    const page = parseInt(searchParams.get("page")) || 1
 
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       selectedCategory: category ? decodeURIComponent(category) : null,
       selectedSubcategory: subcategory ? decodeURIComponent(subcategory) : null,
       onlyWithDiscount: discount,
       sort: sortBy ? decodeURIComponent(sortBy) : null,
       currentPage: page,
-    }));
-  }, [searchParams]);
+    }))
+  }, [searchParams])
 
   useEffect(() => {
-    const params = {};
+    const params = {}
 
     if (state.selectedCategory)
-      params.category = encodeURIComponent(state.selectedCategory);
+      params.category = encodeURIComponent(state.selectedCategory)
     if (state.selectedSubcategory)
-      params.subcategory = encodeURIComponent(state.selectedSubcategory);
-    if (state.onlyWithDiscount) params.discount = 'true';
-    if (state.sort) params.sortBy = encodeURIComponent(state.sort);
-    params.page = state.currentPage;
+      params.subcategory = encodeURIComponent(state.selectedSubcategory)
+    if (state.onlyWithDiscount) params.discount = "true"
+    if (state.sort) params.sortBy = encodeURIComponent(state.sort)
+    params.page = state.currentPage
 
-    setSearchParams(params);
+    setSearchParams(params)
   }, [
     state.selectedCategory,
     state.selectedSubcategory,
@@ -152,44 +152,44 @@ const ShopContent = () => {
     state.sort,
     state.currentPage,
     setSearchParams,
-  ]);
+  ])
 
   const buildQueryParams = useMemo(() => {
-    const params = new URLSearchParams();
+    const params = new URLSearchParams()
 
     if (state.selectedCategory) {
-      params.append('category', state.selectedCategory);
+      params.append("category", state.selectedCategory)
     }
 
     if (state.selectedSubcategory) {
-      params.append('subcategory', state.selectedSubcategory);
+      params.append("subcategory", state.selectedSubcategory)
     }
 
     if (state.onlyWithDiscount) {
-      params.append('discount', 'true');
+      params.append("discount", "true")
     }
 
     if (state.sort) {
-      params.append('sortBy', state.sort);
+      params.append("sortBy", state.sort)
     }
 
     Object.entries(state.filters).forEach(([key, values]) => {
       if (values.length > 0) {
-        params.append(key, values.join(','));
+        params.append(key, values.join(","))
       }
-    });
+    })
 
     if (
       state.priceRange.length === 2 &&
       (state.priceRange[0] > 0 || state.priceRange[1] < 10000)
     ) {
-      params.append('price', `${state.priceRange[0]}-${state.priceRange[1]}`);
+      params.append("price", `${state.priceRange[0]}-${state.priceRange[1]}`)
     }
 
-    params.append('page', state.currentPage);
-    params.append('pageSize', 20);
+    params.append("page", state.currentPage)
+    params.append("pageSize", 20)
 
-    return params.toString();
+    return params.toString()
   }, [
     state.selectedCategory,
     state.selectedSubcategory,
@@ -198,127 +198,127 @@ const ShopContent = () => {
     state.filters,
     state.priceRange,
     state.currentPage,
-  ]);
+  ])
 
   const fetchProducts = useCallback(
     debounce(async (params, signal) => {
       if (state.isInitialLoad) {
-        setState((prev) => ({ ...prev, loading: true, error: null }));
+        setState(prev => ({ ...prev, loading: true, error: null }))
       }
       try {
         const response = await fetch(
           `http://localhost:3000/api/products?${params}`,
           { signal }
-        );
+        )
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status}`)
         }
 
-        const data = await response.json();
-        setState((prev) => ({
+        const data = await response.json()
+        setState(prev => ({
           ...prev,
           products: data.products,
           totalPages: data.totalPages,
           loading: false,
           error: null,
           isInitialLoad: false,
-        }));
+        }))
       } catch (err) {
-        if (err.name !== 'AbortError') {
-          setState((prev) => ({
+        if (err.name !== "AbortError") {
+          setState(prev => ({
             ...prev,
             error: `Ошибка загрузки: ${err.message}. Попробуйте обновить страницу`,
             products: [],
             loading: false,
             isInitialLoad: false,
-          }));
+          }))
         }
       }
     }, 300),
     [state.isInitialLoad]
-  );
+  )
 
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
+    const controller = new AbortController()
+    const signal = controller.signal
 
-    const params = buildQueryParams;
-    fetchProducts(params, signal);
+    const params = buildQueryParams
+    fetchProducts(params, signal)
 
-    return () => controller.abort();
-  }, [buildQueryParams, fetchProducts]);
+    return () => controller.abort()
+  }, [buildQueryParams, fetchProducts])
 
   const handleFilterChange = useCallback((filterType, values) => {
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       filters: { ...prev.filters, [filterType]: values },
       currentPage: 1,
-    }));
-  }, []);
+    }))
+  }, [])
 
   const handlePriceApply = () => {
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       priceRange: tempPriceRange,
       currentPage: 1,
-    }));
-    setVisiblePriceDropdown(false);
-  };
+    }))
+    setVisiblePriceDropdown(false)
+  }
 
-  const handleSortChange = (value) => {
-    setState((prev) => ({ ...prev, sort: value, currentPage: 1 }));
-  };
+  const handleSortChange = value => {
+    setState(prev => ({ ...prev, sort: value, currentPage: 1 }))
+  }
 
   const clearFilters = () => {
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       selectedCategory: null,
       selectedSubcategory: null,
-      filters: { material: [], colors: [], size: [], brand: [], country: [] },
+      filters: { material: [], color: [], size: [], brand: [], country: [] },
       priceRange: [0, 10000],
       onlyWithDiscount: false,
       sort: null,
       currentPage: 1,
-    }));
-    setVisibleDropdown(null);
-    setVisiblePriceDropdown(false);
-  };
+    }))
+    setVisibleDropdown(null)
+    setVisiblePriceDropdown(false)
+  }
 
-  const handlePageChange = (newPage) => {
-    setState((prev) => ({ ...prev, currentPage: newPage }));
-  };
+  const handlePageChange = newPage => {
+    setState(prev => ({ ...prev, currentPage: newPage }))
+  }
 
   const hasActiveFilters =
-    Object.values(state.filters).some((v) => v.length > 0) ||
+    Object.values(state.filters).some(v => v.length > 0) ||
     state.priceRange[0] > 0 ||
     state.priceRange[1] < 10000 ||
     state.onlyWithDiscount ||
     state.selectedCategory ||
-    state.selectedSubcategory;
+    state.selectedSubcategory
 
   const antTheme = {
     token: {
-      colorBgContainer: isDarkMode ? '#1c2233' : '#fff',
+      colorBgContainer: isDarkMode ? "#1c2233" : "#fff",
       colorText: textColor,
-      colorBorder: isDarkMode ? '#2d3746' : '#d9d9d9',
-      colorPrimary: '#1890ff',
+      colorBorder: isDarkMode ? "#2d3746" : "#d9d9d9",
+      colorPrimary: "#1890ff",
     },
     components: {
       Card: {
-        colorBgContainer: isDarkMode ? '#1c2233' : '#fff',
-        colorBorderSecondary: isDarkMode ? '#2d3746' : '#f0f0f0',
+        colorBgContainer: isDarkMode ? "#1c2233" : "#fff",
+        colorBorderSecondary: isDarkMode ? "#2d3746" : "#f0f0f0",
       },
       Dropdown: {
-        colorBgElevated: isDarkMode ? '#1c2233' : '#fff',
+        colorBgElevated: isDarkMode ? "#1c2233" : "#fff",
         colorText: textColor,
       },
       Menu: {
-        itemBg: isDarkMode ? '#1c2233' : '#fff',
-        itemHoverBg: isDarkMode ? '#2d3746' : '#fafafa',
+        itemBg: isDarkMode ? "#1c2233" : "#fff",
+        itemHoverBg: isDarkMode ? "#2d3746" : "#fafafa",
       },
     },
-  };
+  }
 
   const priceDropdownMenu = (
     <div
@@ -328,21 +328,21 @@ const ShopContent = () => {
         width: 300,
       }}
     >
-      <Space direction="vertical" style={{ width: '100%' }}>
+      <Space direction="vertical" style={{ width: "100%" }}>
         <Text style={{ color: textColor }}>Цена</Text>
         <Slider
           range
           min={0}
           max={10000}
           value={tempPriceRange}
-          onChange={(value) => setTempPriceRange(value)}
+          onChange={value => setTempPriceRange(value)}
         />
         <Space>
           <InputNumber
             min={0}
             max={10000}
             value={tempPriceRange[0]}
-            onChange={(value) =>
+            onChange={value =>
               setTempPriceRange([value || 0, tempPriceRange[1]])
             }
           />
@@ -351,7 +351,7 @@ const ShopContent = () => {
             min={0}
             max={10000}
             value={tempPriceRange[1]}
-            onChange={(value) =>
+            onChange={value =>
               setTempPriceRange([tempPriceRange[0], value || 0])
             }
           />
@@ -359,13 +359,13 @@ const ShopContent = () => {
         <Button
           type="primary"
           onClick={handlePriceApply}
-          style={{ width: '100%' }}
+          style={{ width: "100%" }}
         >
           Применить
         </Button>
       </Space>
     </div>
-  );
+  )
 
   return (
     <ConfigProvider
@@ -374,11 +374,11 @@ const ShopContent = () => {
         <Empty
           description="Товаров не найдено"
           image={Empty.PRESENTED_IMAGE_SIMPLE}
-          imageStyle={{ height: 60, filter: isDarkMode ? 'invert(1)' : 'none' }}
+          imageStyle={{ height: 60, filter: isDarkMode ? "invert(1)" : "none" }}
         />
       )}
     >
-      <Layout style={{ minHeight: '100vh', backgroundColor }}>
+      <Layout style={{ minHeight: "100vh", backgroundColor }}>
         <Sider
           width={280}
           style={{
@@ -388,7 +388,7 @@ const ShopContent = () => {
           breakpoint="lg"
           collapsedWidth="0"
         >
-          <div style={{ padding: '24px 16px' }}>
+          <div style={{ padding: "24px 16px" }}>
             <Title
               level={4}
               style={{ color: textColor, marginBottom: 24, paddingLeft: 8 }}
@@ -397,10 +397,10 @@ const ShopContent = () => {
             </Title>
             <Menu
               mode="inline"
-              style={{ background: 'transparent', borderRight: 0 }}
+              style={{ background: "transparent", borderRight: 0 }}
               selectedKeys={[state.selectedCategory, state.selectedSubcategory]}
             >
-              {categories.map((category) => (
+              {categories.map(category => (
                 <Menu.SubMenu
                   key={category.title}
                   title={
@@ -418,7 +418,7 @@ const ShopContent = () => {
                     </span>
                   }
                   onTitleClick={() =>
-                    setState((prev) => ({
+                    setState(prev => ({
                       ...prev,
                       selectedCategory:
                         prev.selectedCategory === category.title
@@ -429,11 +429,11 @@ const ShopContent = () => {
                     }))
                   }
                 >
-                  {category.subcategories.map((sub) => (
+                  {category.subcategories.map(sub => (
                     <Menu.Item
                       key={sub}
                       onClick={() =>
-                        setState((prev) => ({
+                        setState(prev => ({
                           ...prev,
                           selectedSubcategory:
                             prev.selectedSubcategory === sub ? null : sub,
@@ -443,8 +443,8 @@ const ShopContent = () => {
                       style={{
                         background:
                           state.selectedSubcategory === sub
-                            ? '#e6f7ff20'
-                            : 'transparent',
+                            ? "#e6f7ff20"
+                            : "transparent",
                         color:
                           state.selectedSubcategory === sub
                             ? antTheme.token.colorPrimary
@@ -464,36 +464,36 @@ const ShopContent = () => {
         </Sider>
 
         <Content style={{ padding: 24, backgroundColor }}>
-          <Space wrap size="middle" style={{ marginBottom: 24, width: '100%' }}>
+          <Space wrap size="middle" style={{ marginBottom: 24, width: "100%" }}>
             <Dropdown
               menu={{
                 items: [
                   {
-                    label: 'Подобрано для вас',
-                    key: 'random',
+                    label: "Подобрано для вас",
+                    key: "random",
                     style: {
-                      pointerEvents: 'none',
-                      padding: '8px 12px',
-                      color: isDarkMode ? '#8c8c8c' : '#bfbfbf',
+                      pointerEvents: "none",
+                      padding: "8px 12px",
+                      color: isDarkMode ? "#8c8c8c" : "#bfbfbf",
                     },
                     disabled: true,
                   },
-                  ...filterOptions.sort.map((item) => ({
+                  ...filterOptions.sort.map(item => ({
                     key: item,
                     label: (
                       <div
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          transition: 'background 0.3s',
+                          display: "flex",
+                          alignItems: "center",
+                          padding: "8px 12px",
+                          cursor: "pointer",
+                          transition: "background 0.3s",
                         }}
                         onClick={() => handleSortChange(item)}
                       >
                         <Radio
                           checked={state.sort === item}
-                          style={{ pointerEvents: 'none' }}
+                          style={{ pointerEvents: "none" }}
                         />
                         <span style={{ marginLeft: 12 }}>{item}</span>
                       </div>
@@ -501,10 +501,10 @@ const ShopContent = () => {
                   })),
                 ],
               }}
-              trigger={['click']}
+              trigger={["click"]}
             >
               <Button style={{ minWidth: 120, maxWidth: 200 }}>
-                {state.sort ? ` ${state.sort}` : ' Подобрано для вас'}
+                {state.sort ? ` ${state.sort}` : " Подобрано для вас"}
                 <DownOutlined style={{ marginLeft: 12 }} />
               </Button>
             </Dropdown>
@@ -513,44 +513,44 @@ const ShopContent = () => {
               <Dropdown
                 key={key}
                 visible={visibleDropdown === key}
-                onVisibleChange={(visible) =>
+                onVisibleChange={visible =>
                   setVisibleDropdown(visible ? key : null)
                 }
                 menu={{
                   items: [
-                    ...values.map((value) => ({
+                    ...values.map(value => ({
                       key: value,
                       label: (
                         <div
                           style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            transition: 'background 0.3s',
+                            display: "flex",
+                            alignItems: "center",
+                            padding: "8px 12px",
+                            cursor: "pointer",
+                            transition: "background 0.3s",
                           }}
                           onClick={() => {
                             const newValues = state.filters[key].includes(value)
-                              ? state.filters[key].filter((v) => v !== value)
-                              : [...state.filters[key], value];
-                            handleFilterChange(key, newValues);
+                              ? state.filters[key].filter(v => v !== value)
+                              : [...state.filters[key], value]
+                            handleFilterChange(key, newValues)
                           }}
                         >
                           <Checkbox
                             checked={state.filters[key].includes(value)}
-                            style={{ pointerEvents: 'none' }}
+                            style={{ pointerEvents: "none" }}
                           />
                           <span style={{ marginLeft: 12 }}>{value}</span>
                         </div>
                       ),
                     })),
                     {
-                      key: 'apply',
+                      key: "apply",
                       label: (
                         <Button
                           type="primary"
                           onClick={() => setVisibleDropdown(null)}
-                          style={{ width: '100%', marginTop: 8 }}
+                          style={{ width: "100%", marginTop: 8 }}
                         >
                           Применить
                         </Button>
@@ -558,7 +558,7 @@ const ShopContent = () => {
                     },
                   ],
                 }}
-                trigger={['click']}
+                trigger={["click"]}
               >
                 <Button style={{ minWidth: 120, maxWidth: 200 }}>
                   {filterLabels[key]}
@@ -571,12 +571,12 @@ const ShopContent = () => {
 
             <Dropdown
               visible={visiblePriceDropdown}
-              onVisibleChange={(visible) => {
-                setVisiblePriceDropdown(visible);
-                if (visible) setTempPriceRange(state.priceRange);
+              onVisibleChange={visible => {
+                setVisiblePriceDropdown(visible)
+                if (visible) setTempPriceRange(state.priceRange)
               }}
               dropdownRender={() => priceDropdownMenu}
-              trigger={['click']}
+              trigger={["click"]}
             >
               <Button style={{ minWidth: 120, maxWidth: 200 }}>
                 Цена
@@ -588,10 +588,10 @@ const ShopContent = () => {
 
             <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
+                display: "flex",
+                alignItems: "center",
                 gap: 8,
-                padding: '6px 12px',
+                padding: "6px 12px",
                 borderRadius: 6,
                 background: antTheme.token.colorBgContainer,
               }}
@@ -599,8 +599,8 @@ const ShopContent = () => {
               <Text style={{ color: textColor }}>Со скидкой:</Text>
               <Switch
                 checked={state.onlyWithDiscount}
-                onChange={(checked) =>
-                  setState((prev) => ({
+                onChange={checked =>
+                  setState(prev => ({
                     ...prev,
                     onlyWithDiscount: checked,
                     currentPage: 1,
@@ -625,7 +625,7 @@ const ShopContent = () => {
               closable
               style={{
                 marginBottom: 24,
-                border: `1px solid ${isDarkMode ? '#2a1215' : '#ffccc7'}`,
+                border: `1px solid ${isDarkMode ? "#2a1215" : "#ffccc7"}`,
               }}
             />
           )}
@@ -633,7 +633,7 @@ const ShopContent = () => {
           {state.loading && state.isInitialLoad ? (
             <div
               style={{
-                textAlign: 'center',
+                textAlign: "center",
                 padding: 80,
                 background: antTheme.token.colorBgContainer,
                 borderRadius: 8,
@@ -648,7 +648,7 @@ const ShopContent = () => {
           ) : (
             <>
               <Row gutter={[24, 24]} justify="start">
-                {state.products.map((product) => (
+                {state.products.map(product => (
                   <Col
                     key={product.id}
                     xs={24}
@@ -670,8 +670,8 @@ const ShopContent = () => {
               <div
                 style={{
                   marginTop: 24,
-                  display: 'flex',
-                  justifyContent: 'center',
+                  display: "flex",
+                  justifyContent: "center",
                   gap: 8,
                 }}
               >
@@ -681,7 +681,7 @@ const ShopContent = () => {
                 >
                   Назад
                 </Button>
-                <span style={{ color: textColor, padding: '8px 16px' }}>
+                <span style={{ color: textColor, padding: "8px 16px" }}>
                   Страница {state.currentPage} из {state.totalPages}
                 </span>
                 <Button
@@ -696,7 +696,7 @@ const ShopContent = () => {
         </Content>
       </Layout>
     </ConfigProvider>
-  );
-};
+  )
+}
 
-export default ShopContent;
+export default ShopContent

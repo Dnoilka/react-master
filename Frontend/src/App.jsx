@@ -6,7 +6,6 @@ import Contact from './pages/Contact';
 import { CartProvider } from './components/Header/CartContext';
 import { Layout } from 'antd';
 import Subscribe from './pages/Subscribe';
-import CartPage from './pages/Cart';
 import { UserProvider } from './components/Sider/UserContext';
 import EmailVerified from './pages/EmailVerified';
 import ResetPassword from './pages/ResetPassword';
@@ -19,6 +18,8 @@ import Settings from './pages/Settings';
 import ProductPage from './pages/ProductPage';
 import ThemeProvider from './components/Sider/ThemeContext';
 import { WishlistProvider } from './components/Header/WishlistContext';
+import CartPage from './pages/Cart';
+import WishlistPage from './pages/WishlistPage';
 
 export default function App() {
   return (
@@ -37,6 +38,8 @@ export default function App() {
                   <Route path="/product/:id" element={<ProductPage />} />
                   <Route path="/email-verified" element={<EmailVerified />} />
                   <Route path="/auth-success" element={<AuthSuccess />} />
+                  <Route path="/cart" element={<CartPage />} />
+                  <Route path="/wishlist" element={<WishlistPage />} />
                   <Route
                     path="/profile"
                     element={
