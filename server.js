@@ -1,18 +1,18 @@
-require("dotenv").config();
-const express = require("express");
-const nodemailer = require("nodemailer");
-const crypto = require("crypto");
-const bcrypt = require("bcrypt");
-const jwt = require("jsonwebtoken");
-const bodyParser = require("body-parser");
-const fs = require("fs");
-const path = require("path");
-const sqlite3 = require("sqlite3").verbose();
-const cors = require("cors");
-const passport = require("passport");
-const multer = require("multer");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const NodeCache = require("node-cache");
+require('dotenv').config();
+const express = require('express');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const bodyParser = require('body-parser');
+const fs = require('fs');
+const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+const cors = require('cors');
+const passport = require('passport');
+const multer = require('multer');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const NodeCache = require('node-cache');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,10 +21,10 @@ const productCache = new NodeCache({ stdTTL: 300 });
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/");
+    cb(null, 'uploads/');
   },
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     cb(
       null,
       `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`
@@ -35,13 +35,13 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
+    if (file.mimetype.startsWith('image/')) {
       cb(null, true);
     } else {
-      cb(new Error("Разрешены только изображения!"), false);
+      cb(new Error('Разрешены только изображения!'), false);
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 app.use(passport.initialize());
@@ -50,12 +50,14 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/api/auth/google/callback",
+      callbackURL: '/api/auth/google/callback',
     },
     (accessToken, refreshToken, profile, done) => {
-      const db = new sqlite3.Database(path.resolve(__dirname, "database.sqlite"));
+      const db = new sqlite3.Database(
+        path.resolve(__dirname, 'database.sqlite')
+      );
       db.get(
-        "SELECT * FROM users WHERE email = ?",
+        'SELECT * FROM users WHERE email = ?',
         [profile.emails[0].value],
         (err, user) => {
           if (err) return done(err);
@@ -70,7 +72,7 @@ passport.use(
                   email: profile.emails[0].value,
                   name: profile.displayName,
                   isVerified: true,
-                  authMethod: "google",
+                  authMethod: 'google',
                 };
                 db.close();
                 return done(null, newUser);
@@ -89,10 +91,10 @@ passport.use(
 app.use(cors());
 app.use(bodyParser.json());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "frontend", "dist")));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-const dbFilePath = path.resolve(__dirname, "database.sqlite");
+const dbFilePath = path.resolve(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbFilePath);
 
 db.serialize(() => {
@@ -141,58 +143,58 @@ db.serialize(() => {
     UNIQUE(user_id, product_id)
   )`);
 
-  db.run("CREATE INDEX IF NOT EXISTS idx_category ON products(category)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_subcategory ON products(subcategory)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_price ON products(price)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_discount ON products(discount)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_brand ON products(brand)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_material ON products(material)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_colors ON products(colors)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_sizes ON products(sizes)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_country ON products(country)");
-  db.run("CREATE INDEX IF NOT EXISTS idx_created_at ON products(created_at)");
+  db.run('CREATE INDEX IF NOT EXISTS idx_category ON products(category)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_subcategory ON products(subcategory)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_price ON products(price)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_discount ON products(discount)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_brand ON products(brand)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_material ON products(material)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_colors ON products(colors)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_sizes ON products(sizes)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_country ON products(country)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_created_at ON products(created_at)');
 
-  db.get("SELECT COUNT(*) AS count FROM products", (err, row) => {
-    if (err) return console.error("Ошибка при проверке продуктов:", err);
+  db.get('SELECT COUNT(*) AS count FROM products', (err, row) => {
+    if (err) return console.error('Ошибка при проверке продуктов:', err);
 
     if (row.count === 0) {
       const products = [
         {
-          name: "Мужские классические брюки",
-          category: "Одежда",
-          subcategory: "Брюки",
+          name: 'Мужские классические брюки',
+          category: 'Одежда',
+          subcategory: 'Брюки',
           price: 6000,
           oldPrice: 7500,
-          discount: "20%",
+          discount: '20%',
           images: JSON.stringify([
-            "https://img0.happywear.ru/502x758/cache/goods/H/F/HF77111_%D1%87%D0%B5%D1%80%D0%BD%D1%8B%D0%B9_front.jpg",
-            "https://example.com/pants2.jpg"
+            'https://img0.happywear.ru/502x758/cache/goods/H/F/HF77111_%D1%87%D0%B5%D1%80%D0%BD%D1%8B%D0%B9_front.jpg',
+            'https://example.com/pants2.jpg',
           ]),
-          brand: "Gucci",
-          material: "Хлопок",
-          colors: JSON.stringify(["Черный", "Серый", "Синий"]),
+          brand: 'Gucci',
+          material: 'Хлопок',
+          colors: JSON.stringify(['Черный', 'Серый', 'Синий']),
           rating: 4.5,
-          sizes: JSON.stringify(["S", "M", "L", "XL"]),
-          country: "Италия",
-          reviews: 12
+          sizes: JSON.stringify(['S', 'M', 'L', 'XL']),
+          country: 'Италия',
+          reviews: 12,
         },
         {
-          name: "Спортивный костюм",
-          category: "Спорт",
-          subcategory: "Спортивные костюмы",
+          name: 'Спортивный костюм',
+          category: 'Спорт',
+          subcategory: 'Спортивные костюмы',
           price: 7990,
           images: JSON.stringify([
-            "https://example.com/sport1.jpg",
-            "https://example.com/sport2.jpg"
+            'https://example.com/sport1.jpg',
+            'https://example.com/sport2.jpg',
           ]),
-          brand: "Nike",
-          material: "Полиэстер",
-          colors: JSON.stringify(["Синий", "Красный"]),
+          brand: 'Nike',
+          material: 'Полиэстер',
+          colors: JSON.stringify(['Синий', 'Красный']),
           rating: 4.8,
-          sizes: JSON.stringify(["M", "L", "XL"]),
-          country: "Китай",
-          reviews: 8
-        }
+          sizes: JSON.stringify(['M', 'L', 'XL']),
+          country: 'Китай',
+          reviews: 8,
+        },
       ];
 
       const stmt = db.prepare(`INSERT INTO products (
@@ -200,14 +202,14 @@ db.serialize(() => {
         images, brand, material, colors, rating, sizes, country, reviews
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
 
-      products.forEach(product => {
+      products.forEach((product) => {
         stmt.run(
           product.name,
           product.category,
           product.subcategory,
           product.price,
           product.oldPrice || 0,
-          product.discount || "",
+          product.discount || '',
           product.images,
           product.brand,
           product.material,
@@ -220,14 +222,14 @@ db.serialize(() => {
       });
 
       stmt.finalize();
-      console.log("Добавлены начальные продукты");
+      console.log('Добавлены начальные продукты');
     }
   });
 });
 
 function generateAuthToken(user) {
   return jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
+    expiresIn: '1d',
   });
 }
 
@@ -235,7 +237,7 @@ function authenticateJWT(req, res, next) {
   const authHeader = req.headers.authorization;
 
   if (authHeader) {
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.split(' ')[1];
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
       if (err) return res.sendStatus(403);
@@ -247,18 +249,24 @@ function authenticateJWT(req, res, next) {
   }
 }
 
-app.post("/api/register", async (req, res) => {
+app.post('/api/register', async (req, res) => {
   const { name, surname, patronymic, email, password } = req.body;
 
   try {
-    if (!password || password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+    if (
+      !password ||
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/\d/.test(password)
+    ) {
       return res.status(400).json({
-        error: "Пароль должен содержать минимум 8 символов, одну заглавную букву и цифру",
+        error:
+          'Пароль должен содержать минимум 8 символов, одну заглавную букву и цифру',
       });
     }
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-    const verificationToken = crypto.randomBytes(20).toString("hex");
+    const verificationToken = crypto.randomBytes(20).toString('hex');
 
     db.run(
       `INSERT INTO users (email, password, patronymic, surname, name, verificationToken, authMethod) 
@@ -266,19 +274,19 @@ app.post("/api/register", async (req, res) => {
       [email, hashedPassword, patronymic, surname, name, verificationToken],
       function (err) {
         if (err) {
-          return res.status(400).json({ error: "Email уже зарегистрирован" });
+          return res.status(400).json({ error: 'Email уже зарегистрирован' });
         }
 
         const verificationLink = `http://localhost:${PORT}/verify-email?token=${verificationToken}`;
         res.json({
-          message: "Регистрация успешна! Проверьте ваш email для подтверждения",
+          message: 'Регистрация успешна! Проверьте ваш email для подтверждения',
         });
 
         transporter
           .sendMail({
             from: `Dominik Store <${process.env.EMAIL_USER}>`,
             to: email,
-            subject: "Подтверждение email",
+            subject: 'Подтверждение email',
             html: `
             <h1>Подтвердите ваш email</h1>
             <p>Пожалуйста, перейдите по ссылке для подтверждения: 
@@ -286,37 +294,37 @@ app.post("/api/register", async (req, res) => {
             </p>
           `,
           })
-          .catch(error => {
-            console.error("Ошибка при отправке email:", error);
+          .catch((error) => {
+            console.error('Ошибка при отправке email:', error);
           });
       }
     );
   } catch (error) {
-    res.status(500).json({ error: "Ошибка сервера" });
+    res.status(500).json({ error: 'Ошибка сервера' });
   }
 });
 
-app.get("/api/verify-email", (req, res) => {
+app.get('/api/verify-email', (req, res) => {
   const { token } = req.query;
 
   db.get(
-    "SELECT * FROM users WHERE verificationToken = ?",
+    'SELECT * FROM users WHERE verificationToken = ?',
     [token],
     (err, user) => {
       if (err || !user) {
         return res.status(400).json({
-          error: "Неверный токен подтверждения",
+          error: 'Неверный токен подтверждения',
         });
       }
 
       db.run(
-        "UPDATE users SET isVerified = TRUE, verificationToken = NULL WHERE id = ?",
+        'UPDATE users SET isVerified = TRUE, verificationToken = NULL WHERE id = ?',
         [user.id],
-        err => {
-          if (err) return res.status(500).json({ error: "Ошибка сервера" });
+        (err) => {
+          if (err) return res.status(500).json({ error: 'Ошибка сервера' });
           res.json({
             success: true,
-            message: "Email успешно подтвержден",
+            message: 'Email успешно подтвержден',
           });
         }
       );
@@ -324,26 +332,26 @@ app.get("/api/verify-email", (req, res) => {
   );
 });
 
-app.post("/api/login", (req, res) => {
+app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
 
-  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
+  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
     if (err || !user) {
-      return res.status(401).json({ error: "Неверные учетные данные" });
+      return res.status(401).json({ error: 'Неверные учетные данные' });
     }
 
     if (!user.isVerified) {
-      return res.status(403).json({ error: "Email не подтвержден" });
+      return res.status(403).json({ error: 'Email не подтвержден' });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ error: "Неверные учетные данные" });
+      return res.status(401).json({ error: 'Неверные учетные данные' });
     }
 
     const token = generateAuthToken(user);
     res.json({
-      message: "Успешный вход",
+      message: 'Успешный вход',
       token,
       user: {
         id: user.id,
@@ -355,28 +363,28 @@ app.post("/api/login", (req, res) => {
   });
 });
 
-app.post("/api/forgot-password", async (req, res) => {
+app.post('/api/forgot-password', async (req, res) => {
   const { email } = req.body;
 
-  db.get("SELECT * FROM users WHERE email = ?", [email], async (err, user) => {
+  db.get('SELECT * FROM users WHERE email = ?', [email], async (err, user) => {
     if (err || !user) {
-      return res.status(404).json({ error: "Пользователь не найден" });
+      return res.status(404).json({ error: 'Пользователь не найден' });
     }
 
-    const resetToken = crypto.randomBytes(20).toString("hex");
+    const resetToken = crypto.randomBytes(20).toString('hex');
     const resetExpires = Date.now() + 3600000;
 
     db.run(
-      "UPDATE users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE id = ?",
+      'UPDATE users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE id = ?',
       [resetToken, resetExpires, user.id],
-      async err => {
-        if (err) return res.status(500).json({ error: "Ошибка сервера" });
+      async (err) => {
+        if (err) return res.status(500).json({ error: 'Ошибка сервера' });
 
         const resetLink = `http://localhost:${PORT}/reset-password?token=${resetToken}`;
         await transporter.sendMail({
           from: `Dominik Store <${process.env.EMAIL_USER}>`,
           to: email,
-          subject: "Сброс пароля",
+          subject: 'Сброс пароля',
           html: `
             <h1>Сброс пароля</h1>
             <p>Для сброса пароля перейдите по ссылке: 
@@ -386,45 +394,45 @@ app.post("/api/forgot-password", async (req, res) => {
           `,
         });
 
-        res.json({ message: "Ссылка для сброса пароля отправлена на email" });
+        res.json({ message: 'Ссылка для сброса пароля отправлена на email' });
       }
     );
   });
 });
 
-app.post("/api/reset-password", async (req, res) => {
+app.post('/api/reset-password', async (req, res) => {
   const { token, password } = req.body;
 
   db.get(
-    "SELECT * FROM users WHERE resetPasswordToken = ? AND resetPasswordExpires > ?",
+    'SELECT * FROM users WHERE resetPasswordToken = ? AND resetPasswordExpires > ?',
     [token, Date.now()],
     async (err, user) => {
       if (err || !user) {
         return res
           .status(400)
-          .json({ error: "Неверный или просроченный токен" });
+          .json({ error: 'Неверный или просроченный токен' });
       }
 
       try {
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
         db.run(
-          "UPDATE users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE id = ?",
+          'UPDATE users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE id = ?',
           [hashedPassword, user.id],
-          err => {
-            if (err) return res.status(500).json({ error: "Ошибка сервера" });
-            res.json({ message: "Пароль успешно изменен" });
+          (err) => {
+            if (err) return res.status(500).json({ error: 'Ошибка сервера' });
+            res.json({ message: 'Пароль успешно изменен' });
           }
         );
       } catch (error) {
-        res.status(500).json({ error: "Ошибка сервера" });
+        res.status(500).json({ error: 'Ошибка сервера' });
       }
     }
   );
 });
 
-app.get("/api/verify-token", authenticateJWT, (req, res) => {
-  db.get("SELECT * FROM users WHERE id = ?", [req.user.id], (err, user) => {
+app.get('/api/verify-token', authenticateJWT, (req, res) => {
+  db.get('SELECT * FROM users WHERE id = ?', [req.user.id], (err, user) => {
     if (err || !user) {
       return res.status(401).json({ valid: false });
     }
@@ -433,13 +441,13 @@ app.get("/api/verify-token", authenticateJWT, (req, res) => {
 });
 
 app.get(
-  "/api/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
+  '/api/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
 app.get(
-  "/api/auth/google/callback",
-  passport.authenticate("google", { session: false }),
+  '/api/auth/google/callback',
+  passport.authenticate('google', { session: false }),
   (req, res) => {
     const user = req.user;
     const token = generateAuthToken(user);
@@ -447,7 +455,7 @@ app.get(
   }
 );
 
-app.get("/api/products", (req, res) => {
+app.get('/api/products', (req, res) => {
   const cacheKey = JSON.stringify(req.query);
   const cachedData = productCache.get(cacheKey);
 
@@ -487,24 +495,24 @@ app.get("/api/products", (req, res) => {
     params.push(decodeURIComponent(subcategory));
   }
 
-  if (discount === "true") {
+  if (discount === 'true') {
     query += ` AND discount != ''`;
   }
 
   if (brand) {
     query += ` AND brand IN (${brand
-      .split(",")
-      .map(() => "?")
-      .join(",")})`;
-    params.push(...brand.split(",").map(decodeURIComponent));
+      .split(',')
+      .map(() => '?')
+      .join(',')})`;
+    params.push(...brand.split(',').map(decodeURIComponent));
   }
 
   if (material) {
     query += ` AND material IN (${material
-      .split(",")
-      .map(() => "?")
-      .join(",")})`;
-    params.push(...material.split(",").map(decodeURIComponent));
+      .split(',')
+      .map(() => '?')
+      .join(',')})`;
+    params.push(...material.split(',').map(decodeURIComponent));
   }
 
   if (color) {
@@ -519,35 +527,35 @@ app.get("/api/products", (req, res) => {
 
   if (country) {
     query += ` AND country IN (${country
-      .split(",")
-      .map(() => "?")
-      .join(",")})`;
-    params.push(...country.split(",").map(decodeURIComponent));
+      .split(',')
+      .map(() => '?')
+      .join(',')})`;
+    params.push(...country.split(',').map(decodeURIComponent));
   }
 
   if (price) {
-    const priceFilters = price.split(",");
+    const priceFilters = price.split(',');
     const priceConditions = priceFilters
-      .map(p => {
-        const [min, max] = p.split("-");
+      .map((p) => {
+        const [min, max] = p.split('-');
         if (min && max) {
           params.push(parseInt(min), parseInt(max));
-          return "(price BETWEEN ? AND ?)";
+          return '(price BETWEEN ? AND ?)';
         }
         if (min) {
           params.push(parseInt(min));
-          return "price >= ?";
+          return 'price >= ?';
         }
         if (max) {
           params.push(parseInt(max));
-          return "price <= ?";
+          return 'price <= ?';
         }
-        return "";
+        return '';
       })
       .filter(Boolean);
 
     if (priceConditions.length) {
-      query += ` AND (${priceConditions.join(" OR ")})`;
+      query += ` AND (${priceConditions.join(' OR ')})`;
     }
   }
 
@@ -563,28 +571,28 @@ app.get("/api/products", (req, res) => {
 
   if (sort) {
     switch (sort) {
-      case "random":
-        query += " ORDER BY RANDOM()";
+      case 'random':
+        query += ' ORDER BY RANDOM()';
         break;
-      case "reviews_desc":
-        query += " ORDER BY reviews DESC";
+      case 'reviews_desc':
+        query += ' ORDER BY reviews DESC';
         break;
       default:
-        query += " ORDER BY created_at DESC";
+        query += ' ORDER BY created_at DESC';
     }
   } else if (sortBy) {
     const decodedSortBy = decodeURIComponent(sortBy);
     switch (decodedSortBy) {
-      case "Новинки":
+      case 'Новинки':
         query += ` ORDER BY created_at DESC`;
         break;
-      case "Сначала дороже":
-        query += " ORDER BY price DESC";
+      case 'Сначала дороже':
+        query += ' ORDER BY price DESC';
         break;
-      case "Сначала дешевле":
-        query += " ORDER BY price ASC";
+      case 'Сначала дешевле':
+        query += ' ORDER BY price ASC';
         break;
-      case "По величине скидки":
+      case 'По величине скидки':
         query += ` ORDER BY 
           CASE WHEN discount != '' 
                THEN CAST(REPLACE(discount, "%", "") AS INTEGER) 
@@ -592,7 +600,7 @@ app.get("/api/products", (req, res) => {
           END DESC`;
         break;
       default:
-        query += " ORDER BY created_at DESC";
+        query += ' ORDER BY created_at DESC';
     }
   }
 
@@ -608,15 +616,15 @@ app.get("/api/products", (req, res) => {
 
   db.all(query, params, (err, rows) => {
     if (err) {
-      console.error("Ошибка базы данных:", err);
-      return res.status(500).json({ error: "Ошибка базы данных" });
+      console.error('Ошибка базы данных:', err);
+      return res.status(500).json({ error: 'Ошибка базы данных' });
     }
 
     const totalCount = limit ? rows.length : rows[0]?.total_count || 0;
     const totalPages = limit ? 1 : Math.ceil(totalCount / pageSize);
 
     const processed = {
-      products: rows.map(row => ({
+      products: rows.map((row) => ({
         ...row,
         images: JSON.parse(row.images),
         colors: JSON.parse(row.colors),
@@ -633,50 +641,50 @@ app.get("/api/products", (req, res) => {
   });
 });
 
-app.post("/api/wishlist", authenticateJWT, (req, res) => {
+app.post('/api/wishlist', authenticateJWT, (req, res) => {
   const { productId } = req.body;
   const userId = req.user.id;
   db.run(
-    "INSERT OR IGNORE INTO wishlist (user_id, product_id) VALUES (?, ?)",
+    'INSERT OR IGNORE INTO wishlist (user_id, product_id) VALUES (?, ?)',
     [userId, productId],
     function (err) {
-      if (err) return res.status(500).json({ error: "Ошибка базы данных" });
+      if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
       res.json({ success: true });
     }
   );
 });
 
-app.get("/api/wishlist", authenticateJWT, (req, res) => {
+app.get('/api/wishlist', authenticateJWT, (req, res) => {
   const userId = req.user.id;
   db.all(
-    "SELECT product_id FROM wishlist WHERE user_id = ?",
+    'SELECT product_id FROM wishlist WHERE user_id = ?',
     [userId],
     (err, rows) => {
-      if (err) return res.status(500).json({ error: "Ошибка базы данных" });
-      const productIds = rows.map(row => row.product_id);
+      if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
+      const productIds = rows.map((row) => row.product_id);
       res.json(productIds);
     }
   );
 });
 
-app.delete("/api/wishlist/:id", authenticateJWT, (req, res) => {
+app.delete('/api/wishlist/:id', authenticateJWT, (req, res) => {
   const productId = req.params.id;
   const userId = req.user.id;
   db.run(
-    "DELETE FROM wishlist WHERE user_id = ? AND product_id = ?",
+    'DELETE FROM wishlist WHERE user_id = ? AND product_id = ?',
     [userId, productId],
     function (err) {
-      if (err) return res.status(500).json({ error: "Ошибка базы данных" });
+      if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
       res.json({ success: true });
     }
   );
 });
 
-app.get("/api/products/:id", (req, res) => {
+app.get('/api/products/:id', (req, res) => {
   const { id } = req.params;
-  db.get("SELECT * FROM products WHERE id = ?", [id], (err, row) => {
+  db.get('SELECT * FROM products WHERE id = ?', [id], (err, row) => {
     if (err || !row) {
-      return res.status(404).json({ error: "Товар не найден" });
+      return res.status(404).json({ error: 'Товар не найден' });
     }
     try {
       res.json({
@@ -689,23 +697,23 @@ app.get("/api/products/:id", (req, res) => {
         discount: row.discount || null,
       });
     } catch (e) {
-      res.status(500).json({ error: "Ошибка обработки данных" });
+      res.status(500).json({ error: 'Ошибка обработки данных' });
     }
   });
 });
 
-app.post("/subscribe", async (req, res) => {
+app.post('/subscribe', async (req, res) => {
   const { email } = req.body;
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return res.status(400).json({ message: "Некорректный email" });
+    return res.status(400).json({ message: 'Некорректный email' });
   }
 
   const promoCodes = loadPromoCodes();
 
   if (promoCodes[email]) {
     return res.json({
-      message: "Вы уже получили промокод!",
+      message: 'Вы уже получили промокод!',
       promoCode: promoCodes[email],
     });
   }
@@ -718,48 +726,49 @@ app.post("/subscribe", async (req, res) => {
     await transporter.sendMail({
       from: `Dominik Store <${process.env.EMAIL_USER}>`,
       to: email,
-      subject: "Ваш промокод от Dominik Store!",
+      subject: 'Ваш промокод от Dominik Store!',
       html: `
         <h1>Спасибо за подписку!</h1>
         <p>Ваш промокод: <strong>${promoCode}</strong></p>
         <p>Используйте его при оформлении заказа для получения скидки 10%!</p>
       `,
     });
-    res.json({ message: "Промокод отправлен на вашу почту" });
+    res.json({ message: 'Промокод отправлен на вашу почту' });
   } catch (error) {
-    console.error("Ошибка отправки:", error);
-    res.status(500).json({ message: "Ошибка отправки письма" });
+    console.error('Ошибка отправки:', error);
+    res.status(500).json({ message: 'Ошибка отправки письма' });
   }
 });
 
 app.post(
-  "/api/upload-avatar",
+  '/api/upload-avatar',
   authenticateJWT,
-  upload.single("avatar"),
+  upload.single('avatar'),
   async (req, res) => {
     try {
       if (!req.file) {
-        return res.status(400).json({ error: "Файл не загружен" });
+        return res.status(400).json({ error: 'Файл не загружен' });
       }
 
       const avatarPath = `/uploads/${req.file.filename}`;
 
       db.run(
-        "UPDATE users SET avatar = ? WHERE id = ?",
+        'UPDATE users SET avatar = ? WHERE id = ?',
         [avatarPath, req.user.id],
         function (err) {
           if (err) {
-            console.error("Ошибка базы данных:", err);
-            return res.status(500).json({ error: "Ошибка базы данных" });
+            console.error('Ошибка базы данных:', err);
+            return res.status(500).json({ error: 'Ошибка базы данных' });
           }
 
           db.get(
-            "SELECT * FROM users WHERE id = ?",
+            'SELECT * FROM users WHERE id = ?',
             [req.user.id],
             (err, user) => {
-              if (err) return res.status(500).json({ error: "Ошибка базы данных" });
+              if (err)
+                return res.status(500).json({ error: 'Ошибка базы данных' });
               res.json({
-                message: "Аватар успешно загружен",
+                message: 'Аватар успешно загружен',
                 avatarUrl: avatarPath,
                 user,
               });
@@ -768,15 +777,15 @@ app.post(
         }
       );
     } catch (error) {
-      console.error("Ошибка загрузки:", error);
-      res.status(500).json({ error: "Ошибка загрузки" });
+      console.error('Ошибка загрузки:', error);
+      res.status(500).json({ error: 'Ошибка загрузки' });
     }
   }
 );
 
-app.put("/api/products/:id", authenticateJWT, (req, res) => {
+app.put('/api/products/:id', authenticateJWT, (req, res) => {
   const { id } = req.params;
-  const { 
+  const {
     name,
     category,
     subcategory,
@@ -789,7 +798,7 @@ app.put("/api/products/:id", authenticateJWT, (req, res) => {
     colors,
     sizes,
     country,
-    reviews
+    reviews,
   } = req.body;
 
   const updates = [];
@@ -908,7 +917,7 @@ app.put("/api/products/:id", authenticateJWT, (req, res) => {
   db.run(
     `UPDATE products SET ${updates.join(', ')} WHERE id = ?`,
     params,
-    function(err) {
+    function (err) {
       if (err) return res.status(500).json({ error: 'Ошибка базы данных' });
       res.json({ affected: this.changes });
     }
@@ -916,7 +925,7 @@ app.put("/api/products/:id", authenticateJWT, (req, res) => {
 });
 
 function loadPromoCodes() {
-  const promoCodesFile = path.resolve(__dirname, "promoCodes.json");
+  const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
   try {
     return fs.existsSync(promoCodesFile)
       ? JSON.parse(fs.readFileSync(promoCodesFile))
@@ -927,26 +936,26 @@ function loadPromoCodes() {
 }
 
 function savePromoCodes(promoCodes) {
-  const promoCodesFile = path.resolve(__dirname, "promoCodes.json");
+  const promoCodesFile = path.resolve(__dirname, 'promoCodes.json');
   fs.writeFileSync(promoCodesFile, JSON.stringify(promoCodes, null, 2));
 }
 
 function generatePromoCode() {
-  return `DOMINIK-${crypto.randomBytes(4).toString("hex").toUpperCase()}`;
+  return `DOMINIK-${crypto.randomBytes(4).toString('hex').toUpperCase()}`;
 }
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  service: 'gmail',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
 });
 
-app.get("*", (req, res) => {
+app.get('*', (req, res) => {
   res.sendFile(
-    path.resolve(__dirname, "frontend", "dist", "index.html"),
-    err => {
+    path.resolve(__dirname, 'frontend', 'dist', 'index.html'),
+    (err) => {
       if (err) {
         res.status(500).send(err);
       }
@@ -956,5 +965,5 @@ app.get("*", (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Сервер запущен на http://localhost:${PORT}`);
-  console.log(`Режим работы: ${process.env.NODE_ENV || "development"}`);
+  console.log(`Режим работы: ${process.env.NODE_ENV || 'development'}`);
 });

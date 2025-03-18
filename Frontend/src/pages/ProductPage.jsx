@@ -241,7 +241,13 @@ const ProductPage = () => {
                 </Text>
                 <br />
                 <Select
-                  style={{ width: 120, marginTop: 8 }}
+                  style={{
+                    border: '1px solid',
+                    width: '100%',
+                    borderRadius: 7,
+                    backgroundColor: '#fff',
+                    borderColor: '#000',
+                  }}
                   placeholder="Выберите цвет"
                   onChange={(value) => setSelectedColor(value)}
                 >
@@ -258,7 +264,13 @@ const ProductPage = () => {
               </div>
               <div style={{ marginTop: 16 }}>
                 <Select
-                  style={{ width: 120 }}
+                  style={{
+                    border: '1px solid',
+                    width: '100%',
+                    borderRadius: 7,
+                    backgroundColor: '#fff',
+                    borderColor: '#000',
+                  }}
                   placeholder="Выберите размер"
                   onChange={(value) => setSelectedSize(value)}
                 >
@@ -268,7 +280,16 @@ const ProductPage = () => {
                     </Option>
                   ))}
                 </Select>
-                <Button type="link" onClick={() => setIsSizeChartVisible(true)}>
+                <Button
+                  type="link"
+                  onClick={() => setIsSizeChartVisible(true)}
+                  style={{
+                    padding: 0,
+                    color: '#000',
+                    textDecoration: 'underline black',
+                    fontSize: '14px',
+                  }}
+                >
                   Таблица размеров
                 </Button>
               </div>
@@ -320,7 +341,6 @@ const ProductPage = () => {
       </Layout>
       <CustomFooter />
 
-      {/* Модальное окно таблицы размеров */}
       <Modal
         title="Таблица размеров"
         visible={isSizeChartVisible}
@@ -337,36 +357,54 @@ const ProductPage = () => {
                 Российский размер
               </th>
               <th style={{ border: '1px solid #ddd', padding: 8 }}>
-                Обхват груди (см)
-              </th>
-              <th style={{ border: '1px solid #ddd', padding: 8 }}>
                 Обхват талии (см)
               </th>
               <th style={{ border: '1px solid #ddd', padding: 8 }}>
-                Обхват бедер (см)
+                Рост (см)
               </th>
             </tr>
           </thead>
           <tbody>
             <tr>
               <td style={{ border: '1px solid #ddd', padding: 8 }}>XS</td>
-              <td style={{ border: '1px solid #ddd', padding: 8 }}>40-42</td>
-              <td style={{ border: '1px solid #ddd', padding: 8 }}>80-84</td>
-              <td style={{ border: '1px solid #ddd', padding: 8 }}>60-64</td>
-              <td style={{ border: '1px solid #ddd', padding: 8 }}>88-92</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>42</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>68</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>176</td>
             </tr>
             <tr>
               <td style={{ border: '1px solid #ddd', padding: 8 }}>S</td>
-              <td style={{ border: '1px solid #ddd', padding: 8 }}>42-44</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>44/46</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>72-76</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>176</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>M</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>48</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>80</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>176-182</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>L</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>50/52</td>
               <td style={{ border: '1px solid #ddd', padding: 8 }}>84-88</td>
-              <td style={{ border: '1px solid #ddd', padding: 8 }}>64-68</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>182</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>XL</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>53/56</td>
               <td style={{ border: '1px solid #ddd', padding: 8 }}>92-96</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>182</td>
+            </tr>
+            <tr>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>XXL</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>58/60</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>100-104</td>
+              <td style={{ border: '1px solid #ddd', padding: 8 }}>182-188</td>
             </tr>
           </tbody>
         </table>
       </Modal>
 
-      {/* Модальное окно подтверждения добавления в корзину */}
       <Modal
         title="Товар добавлен в корзину"
         visible={isCartModalVisible}
@@ -396,7 +434,6 @@ const ProductPage = () => {
         </div>
       </Modal>
 
-      {/* Модальное окно увеличенного изображения */}
       <Modal
         visible={isImageModalVisible}
         onCancel={() => setIsImageModalVisible(false)}
